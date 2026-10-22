@@ -7,3 +7,5 @@ Hosted locally for consistent creative-portfolio navigation. Asset base paths po
 Warm-start customization: a clearly labeled recorded block renders immediately; the WebSocket requests the latest full block on connect, replacing the preview before waiting for new block events.
 
 Default composition uses orthographic projection, a centered vertical private-flow marker, aligned block column, and responsive framing. Orbit, pan, and zoom remain enabled.
+
+Restored the original perspective camera and diagonal block trail. Replaced the source marker with a pulsing assembly tray, low public arcs, and direct private entry from the block edge.
