@@ -1,0 +1,203 @@
+[
+  {
+    "id": "merced-river",
+    "title": "Merced River",
+    "slug": "MERCED_RIVER",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "After Albert Bierstadt, 1866. Late light through a storm; the river holds the cliffs still while two canoes cross and horses graze the meadow.",
+    "image": "media/merced-river.jpg",
+    "video": "https://nasht12.github.io/threejs-portfolio/media/merced-river.mp4",
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/merced-river.html",
+    "controls": "Drag to look · scroll to zoom · W A S D to walk",
+    "pos": [
+      -2.2,
+      4.5,
+      0.9
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "isle-of-the-dead",
+    "title": "Isle of the Dead",
+    "slug": "ISLE_OF_THE_DEAD",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "After Arnold Böcklin, 1880. Evening on a still sea: the last light on the rock, the cypresses already dark, a boat crossing to the landing.",
+    "image": "media/isle-of-the-dead.jpg",
+    "video": "https://nasht12.github.io/threejs-portfolio/media/isle-of-the-dead.mp4",
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/isle-of-the-dead.html",
+    "controls": "Drag to look · scroll to zoom · W A S D to walk",
+    "pos": [
+      -0.65,
+      6,
+      0.3
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "fog-hollow",
+    "title": "Fog Hollow",
+    "slug": "FOG_HOLLOW",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "After the three.js fog-scattering example. Dawn fog lies in the hollow; the low sun breaks through the firs and the far trees dissolve.",
+    "image": "media/fog-hollow.jpg",
+    "video": "https://nasht12.github.io/threejs-portfolio/media/fog-hollow.mp4",
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/fog-hollow.html",
+    "controls": "Drag to look · W A S D to walk · Shift to hurry",
+    "pos": [
+      1.55,
+      6.35,
+      0.5
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "indigo-ridge",
+    "title": "Indigo Ridge",
+    "slug": "INDIGO_RIDGE",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "Blue hour on a grass ridge: a walker climbs past a lone tree as the light goes.",
+    "image": "media/indigo-ridge.jpg",
+    "video": null,
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/indigo-ridge.html",
+    "controls": "Drag to orbit · right-drag to pan · scroll to zoom",
+    "pos": [
+      2.65,
+      4.65,
+      0.2
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "dents-du-midi",
+    "title": "Dents du Midi",
+    "slug": "DENTS_DU_MIDI",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "After Gustave Courbet, 1877. A goatherd rests on the knoll above the lake while the herd grazes; cloud shadows cross the massif.",
+    "image": "media/dents-du-midi.jpg",
+    "video": null,
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/dents-du-midi.html",
+    "controls": "Drag to look around · scroll to zoom",
+    "pos": [
+      2.15,
+      2.85,
+      0.8
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "gulf-stream-study",
+    "title": "Gulf Stream Study",
+    "slug": "GULF_STREAM_STUDY",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "The sea of Winslow Homer’s Gulf Stream, 1899. Only the water: turquoise swell running before the trade wind, the sun showing through every crest.",
+    "image": "media/gulf-stream-study.jpg",
+    "video": null,
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/gulf-stream-study.html",
+    "controls": "Drag to look around",
+    "pos": [
+      -2.1,
+      2.9,
+      0.9
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "rigging-bench",
+    "title": "Rigging Bench",
+    "slug": "RIGGING_BENCH",
+    "tech": "Three.js",
+    "format": "Interactive browser scene",
+    "description": "Drop in a humanoid model and watch it move: bones are matched automatically and CC0 motion capture is retargeted onto it.",
+    "image": "media/rigging-bench.jpg",
+    "video": null,
+    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/rigging-bench.html",
+    "controls": "Drag to orbit · drop a .glb, .fbx or .obj onto the bench",
+    "pos": [
+      -0.95,
+      1.55,
+      1
+    ],
+    "category": "Three.js",
+    "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "flower_reflection",
+    "title": "Flower Reflection",
+    "description": "A layered floral form suspended above its reflection.",
+    "slug": "FLOWER_REFLECTION",
+    "tech": "TouchDesigner",
+    "format": "Recorded output",
+    "image": "media/flower_reflection.jpg",
+    "video": "media/flower_reflection.mp4",
+    "pos": [
+      -1.9,
+      5.4,
+      -1.5
+    ],
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative visuals & motion studies"
+  },
+  {
+    "id": "spectral_smear",
+    "title": "Spectral Smear",
+    "description": "A portrait stretched into a shifting spectrum of colour.",
+    "slug": "SPECTRAL_SMEAR",
+    "tech": "TouchDesigner",
+    "format": "Recorded output",
+    "image": "media/spectral_smear.jpg",
+    "video": "media/spectral_smear.mp4",
+    "pos": [
+      1.8,
+      5.5,
+      -1.7
+    ],
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative visuals & motion studies"
+  },
+  {
+    "id": "grid_pop_green4",
+    "title": "Grid / Form",
+    "description": "A sculptural form framed within a field of texture.",
+    "slug": "GRID_POP_GREEN4",
+    "tech": "TouchDesigner",
+    "format": "Recorded output",
+    "image": "media/grid_pop_green4.jpg",
+    "video": "media/grid_pop_green4.mp4",
+    "pos": [
+      2.25,
+      3.45,
+      -1.6
+    ],
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative visuals & motion studies"
+  },
+  {
+    "id": "noise_displace_diamond",
+    "title": "Noise / Displacement",
+    "description": "A figure transformed by saturated colour and fragmented surface detail.",
+    "slug": "NOISE_DISPLACE_DIAMOND",
+    "tech": "TouchDesigner",
+    "format": "Recorded output",
+    "image": "media/noise_displace_diamond.jpg",
+    "video": "media/noise_displace_diamond.mp4",
+    "pos": [
+      -1.8,
+      2.4,
+      -1.6
+    ],
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative visuals & motion studies"
+  }
+]
