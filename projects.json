@@ -1,5 +1,31 @@
 [
   {
+    "id": "washington-geology",
+    "title": "Washington Geologic Information Portal",
+    "slug": "WASHINGTON_GEOLOGY",
+    "description": "A map-based interface for exploring Washington’s geology, natural hazards, and geoscience data through searchable layers and mapping tools.",
+    "url": "https://geologyportal.dnr.wa.gov/",
+    "tech": "Geospatial web application",
+    "format": "Map-based web application",
+    "image": "media/washington-geology.png",
+    "category": "Map-based applications",
+    "categoryDescription": "Geospatial interfaces & data exploration",
+    "note": "Washington Department of Natural Resources · Open the live portal to explore."
+  },
+  {
+    "id": "washington-lidar",
+    "title": "Washington Lidar Portal",
+    "slug": "WASHINGTON_LIDAR",
+    "description": "An interactive portal for exploring Washington’s lidar coverage, comparing terrain and elevation layers, and finding data to download.",
+    "url": "https://lidar.dnr.wa.gov/",
+    "tech": "Geospatial web application",
+    "format": "Map-based web application",
+    "image": "media/washington-lidar.png",
+    "category": "Map-based applications",
+    "categoryDescription": "Geospatial interfaces & data exploration",
+    "note": "Washington Department of Natural Resources · Open the live portal to explore."
+  },
+  {
     "id": "merced-river",
     "title": "Merced River",
     "slug": "MERCED_RIVER",
