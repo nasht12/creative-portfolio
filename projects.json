@@ -26,6 +26,19 @@
     "note": "Washington Department of Natural Resources · Open the live portal to explore."
   },
   {
+    "id": "twelve-seconds",
+    "title": "Twelve Seconds",
+    "slug": "TWELVE_SECONDS",
+    "tech": "React · Three.js · Ethereum",
+    "format": "Interactive data visualization",
+    "description": "An interactive view of Ethereum’s public mempool and block activity. Pending transactions become points, while blocks reveal transaction order, fees, and the flow from pending to confirmed.",
+    "image": "media/twelve-seconds.png",
+    "url": "https://nasht12.github.io/threejs-portfolio/web3/",
+    "category": "Web3 UI",
+    "categoryDescription": "Blockchain interfaces & data visualization",
+    "note": "Read-only Ethereum visualization · Live data with a recorded replay fallback."
+  },
+  {
     "id": "merced-river",
     "title": "Merced River",
     "slug": "MERCED_RIVER",
