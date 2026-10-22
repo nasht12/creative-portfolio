@@ -33,7 +33,7 @@
     "format": "Interactive data visualization",
     "description": "An interactive view of Ethereum’s public mempool and block activity. Pending transactions become points, while blocks reveal transaction order, fees, and the flow from pending to confirmed.",
     "image": "media/twelve-seconds.png",
-    "url": "https://nasht12.github.io/threejs-portfolio/web3/",
+    "url": "web3/",
     "category": "Web3 UI",
     "categoryDescription": "Blockchain interfaces & data visualization",
     "note": "Read-only Ethereum visualization · Live data with a recorded replay fallback."
@@ -47,7 +47,7 @@
     "description": "After Albert Bierstadt, 1866. Late light through a storm; the river holds the cliffs still while two canoes cross and horses graze the meadow.",
     "image": "media/merced-river.jpg",
     "video": "https://nasht12.github.io/threejs-portfolio/media/merced-river.mp4",
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/merced-river.html",
+    "scene": "scenes/merced-river.html",
     "controls": "Drag to look · scroll to zoom · W A S D to walk",
     "pos": [
       -2.2,
@@ -66,7 +66,7 @@
     "description": "After Arnold Böcklin, 1880. Evening on a still sea: the last light on the rock, the cypresses already dark, a boat crossing to the landing.",
     "image": "media/isle-of-the-dead.jpg",
     "video": "https://nasht12.github.io/threejs-portfolio/media/isle-of-the-dead.mp4",
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/isle-of-the-dead.html",
+    "scene": "scenes/isle-of-the-dead.html",
     "controls": "Drag to look · scroll to zoom · W A S D to walk",
     "pos": [
       -0.65,
@@ -85,7 +85,7 @@
     "description": "After the three.js fog-scattering example. Dawn fog lies in the hollow; the low sun breaks through the firs and the far trees dissolve.",
     "image": "media/fog-hollow.jpg",
     "video": "https://nasht12.github.io/threejs-portfolio/media/fog-hollow.mp4",
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/fog-hollow.html",
+    "scene": "scenes/fog-hollow.html",
     "controls": "Drag to look · W A S D to walk · Shift to hurry",
     "pos": [
       1.55,
@@ -104,7 +104,7 @@
     "description": "Blue hour on a grass ridge: a walker climbs past a lone tree as the light goes.",
     "image": "media/indigo-ridge.jpg",
     "video": null,
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/indigo-ridge.html",
+    "scene": "scenes/indigo-ridge.html",
     "controls": "Drag to orbit · right-drag to pan · scroll to zoom",
     "pos": [
       2.65,
@@ -123,7 +123,7 @@
     "description": "After Gustave Courbet, 1877. A goatherd rests on the knoll above the lake while the herd grazes; cloud shadows cross the massif.",
     "image": "media/dents-du-midi.jpg",
     "video": null,
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/dents-du-midi.html",
+    "scene": "scenes/dents-du-midi.html",
     "controls": "Drag to look around · scroll to zoom",
     "pos": [
       2.15,
@@ -142,7 +142,7 @@
     "description": "The sea of Winslow Homer’s Gulf Stream, 1899. Only the water: turquoise swell running before the trade wind, the sun showing through every crest.",
     "image": "media/gulf-stream-study.jpg",
     "video": null,
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/gulf-stream-study.html",
+    "scene": "scenes/gulf-stream-study.html",
     "controls": "Drag to look around",
     "pos": [
       -2.1,
@@ -161,7 +161,7 @@
     "description": "Drop in a humanoid model and watch it move: bones are matched automatically and CC0 motion capture is retargeted onto it.",
     "image": "media/rigging-bench.jpg",
     "video": null,
-    "scene": "https://nasht12.github.io/threejs-portfolio/scenes/rigging-bench.html",
+    "scene": "scenes/rigging-bench.html",
     "controls": "Drag to orbit · drop a .glb, .fbx or .obj onto the bench",
     "pos": [
       -0.95,

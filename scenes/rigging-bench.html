@@ -1,0 +1,1099 @@
+<title>Rigging Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a workbench. Steps down the left (model, rig, animate, instance); the viewport fills the rest. */
+  :root{
+    --bg:#e9e6df; --panel:#f6f4ef; --ink:#1d1f22; --dim:#62666c; --line:rgba(29,31,34,.12); --field:#fff; --accent:#d4552b; --ok:#2f7d4f; --warn:#b4741a;
+    --view-top:#f3f1ec; --view-bottom:#c9c4ba;
+    --sans:'Schibsted Grotesk','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#16171a; --panel:#1e2024; --ink:#ecebe7; --dim:#9a9ea6; --line:rgba(236,235,231,.12); --field:#25282d; --accent:#f0794d; --ok:#5bbf86; --warn:#e3a24a;
+    --view-top:#2a2c31; --view-bottom:#111215; color-scheme:dark; } }
+  :root[data-theme="dark"]{
+    --bg:#16171a; --panel:#1e2024; --ink:#ecebe7; --dim:#9a9ea6; --line:rgba(236,235,231,.12); --field:#25282d; --accent:#f0794d; --ok:#5bbf86; --warn:#e3a24a;
+    --view-top:#2a2c31; --view-bottom:#111215; color-scheme:dark; }
+  [hidden]{display:none!important;}
+  html,body{height:100%;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;}
+  .app{height:100%;display:grid;grid-template-columns:330px minmax(0,1fr);}
+  @media (max-width:820px){ .app{grid-template-columns:1fr;grid-template-rows:56vh auto;height:auto;min-height:100%;} .view{order:-1;} }
+  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding-inline:16px;padding-block:16px 28px;display:flex;flex-direction:column;gap:14px;min-width:0;}
+  h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;text-wrap:balance;}
+  .lede{margin:2px 0 0;color:var(--dim);line-height:1.5;}
+  section{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:9px;min-width:0;}
+  section h2{margin:0;display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:700;}
+  section h2 b{font-family:var(--mono);font-weight:500;color:var(--accent);font-size:12px;}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  button,.btn{appearance:none;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-size:12.5px;padding:7px 11px;border-radius:7px;cursor:pointer;min-height:32px;}
+  button:hover{border-color:var(--dim);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500;}
+  button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--dim);line-height:1.5;cursor:pointer;}
+  .drop.over{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 8%,transparent);}
+  .drop strong{color:var(--ink);}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:12px;}
+  .facts dt{color:var(--dim);}
+  .facts dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere;}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);}
+  .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dim);}
+  .chip.ok::before{background:var(--ok);} .chip.warn::before{background:var(--warn);}
+  label.f{display:grid;grid-template-columns:110px 1fr auto;gap:8px;align-items:center;color:var(--dim);}
+  label.f output{font-family:var(--mono);color:var(--ink);font-size:12px;min-width:3.5ch;text-align:right;}
+  input[type=range]{width:100%;accent-color:var(--accent);margin:0;}
+  select{font:inherit;font-size:12.5px;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;}
+  .clips{display:flex;flex-wrap:wrap;gap:6px;}
+  .clips button{font-size:12px;padding:6px 10px;}
+  .clips .tag{font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:4px;}
+  .clips button[aria-pressed="true"] .tag{color:inherit;opacity:.7;}
+  details summary{cursor:pointer;color:var(--dim);font-size:12px;}
+  .map{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;margin-top:8px;font-size:12px;}
+  .map span{font-family:var(--mono);color:var(--dim);}
+  .map select{width:100%;}
+  .note{margin:0;color:var(--dim);font-size:12px;line-height:1.5;}
+  .view{position:relative;min-width:0;background:linear-gradient(to bottom,var(--view-top),var(--view-bottom));}
+  #view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+  .hud{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;}
+  .hud span{font-family:var(--mono);font-size:11px;background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums;}
+  .toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:12.5px;max-width:min(520px,calc(100% - 32px));text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .toast.err{background:#a3301b;color:#fff;}
+  .viewdrop{position:absolute;inset:10px;border:2px dashed var(--accent);border-radius:12px;display:grid;place-items:center;font-size:15px;color:var(--ink);background:color-mix(in srgb,var(--panel) 70%,transparent);}
+  @media (prefers-reduced-motion: reduce){ .toast{transition:none;} }
+</style>
+
+<div class="app">
+  <aside>
+    <header>
+      <h1>Rigging Bench</h1>
+      <p class="lede">Bring in a model from Blender or a download, give it a skeleton, put motion on it, then fill the floor with copies.</p>
+    </header>
+
+    <section aria-labelledby="h-model">
+      <h2 id="h-model"><b>1</b>Model</h2>
+      <label class="drop" id="drop" for="file"><strong>Drop files here</strong> or click to choose<br>.glb, .gltf (with its .bin and textures), .fbx, .obj</label>
+      <input type="file" id="file" multiple accept=".glb,.gltf,.bin,.fbx,.obj,.png,.jpg,.jpeg,.webp" hidden>
+      <div class="row"><button type="button" id="sampleSable">Load Sable Quill</button><button type="button" id="sample">Load the wooden mannequin</button></div>
+      <dl class="facts" id="facts"></dl>
+    </section>
+
+    <section aria-labelledby="h-rig">
+      <h2 id="h-rig"><b>2</b>Rig</h2>
+      <div class="row"><span class="chip" id="rigChip">No model</span></div>
+      <div class="row">
+        <button type="button" id="autorig" class="primary" disabled>Auto-rig as humanoid</button>
+        <button type="button" id="editJoints" aria-pressed="false" disabled>Edit joints</button>
+        <button type="button" id="showBones" aria-pressed="false">Show skeleton</button>
+      </div>
+      <label class="f"><span>Model faces</span><select id="facing"><option value="0">+Z (Blender front)</option><option value="3.1416">−Z</option><option value="1.5708">+X</option><option value="-1.5708">−X</option></select><span></span></label>
+      <label class="f" id="mirrorRow" hidden><span>Mirror edits</span><input type="checkbox" id="mirror" checked><span></span></label>
+      <p class="note" id="rigNote">Auto-rig fits 19 humanoid bones to the mesh, standing in a T-pose, A-pose or with arms down, and paints the skin weights.</p>
+      <details id="mapBox"><summary>Bone mapping</summary><div class="map" id="map"></div></details>
+    </section>
+
+    <section aria-labelledby="h-anim">
+      <h2 id="h-anim"><b>3</b>Animate</h2>
+      <div class="clips" id="clips"><span class="note">Load a model to see its animations.</span></div>
+      <div class="row"><button type="button" id="play" aria-pressed="true">Pause</button></div>
+      <label class="f"><span>Time</span><input type="range" id="scrub" min="0" max="1" step="0.001" value="0"><output id="scrubV">0.00</output></label>
+      <label class="f"><span>Speed</span><input type="range" id="speed" min="0.1" max="2" step="0.05" value="1"><output id="speedV">1.00×</output></label>
+    </section>
+
+    <section aria-labelledby="h-pose">
+      <h2 id="h-pose"><b>4</b>Posture</h2>
+      <p class="note">Adjust how the character holds itself. It applies on top of any animation, and to every copy.</p>
+      <label class="f"><span>Body turn</span><input type="range" id="pTurn" min="-180" max="180" step="1" value="0"><output id="pTurnV">0°</output></label>
+      <label class="f"><span>Lean</span><input type="range" id="pLean" min="-30" max="30" step="1" value="0"><output id="pLeanV">0°</output></label>
+      <label class="f"><span>Head turn</span><input type="range" id="pHeadTurn" min="-70" max="70" step="1" value="0"><output id="pHeadTurnV">0°</output></label>
+      <label class="f"><span>Head nod</span><input type="range" id="pNod" min="-35" max="35" step="1" value="0"><output id="pNodV">0°</output></label>
+      <label class="f"><span>Head tilt</span><input type="range" id="pTilt" min="-30" max="30" step="1" value="0"><output id="pTiltV">0°</output></label>
+      <label class="f"><span>Shoulders</span><input type="range" id="pShoulders" min="-20" max="25" step="1" value="0"><output id="pShouldersV">0°</output></label>
+      <label class="f"><span>Arm spread</span><input type="range" id="pArms" min="-25" max="70" step="1" value="0"><output id="pArmsV">0°</output></label>
+      <label class="f"><span>Elbows</span><input type="range" id="pElbows" min="0" max="100" step="1" value="0"><output id="pElbowsV">0°</output></label>
+      <label class="f"><span>Stance width</span><input type="range" id="pStance" min="-8" max="25" step="1" value="0"><output id="pStanceV">0°</output></label>
+      <label class="f"><span>Knees</span><input type="range" id="pKnees" min="0" max="60" step="1" value="0"><output id="pKneesV">0°</output></label>
+      <div class="row"><button type="button" id="pReset">Reset posture</button></div>
+    </section>
+
+    <section aria-labelledby="h-inst">
+      <h2 id="h-inst"><b>5</b>Instance</h2>
+      <label class="f"><span>Copies</span><input type="range" id="count" min="1" max="200" step="1" value="1"><output id="countV">1</output></label>
+      <label class="f"><span>Layout</span><select id="layout"><option value="rings">Rings</option><option value="grid">Grid</option><option value="scatter">Scatter</option></select><span></span></label>
+      <label class="f"><span>Spacing</span><input type="range" id="spacing" min="0.6" max="3" step="0.05" value="1.2"><output id="spacingV">1.20</output></label>
+      <label class="f"><span>Timing spread</span><input type="range" id="spread" min="0" max="1" step="0.01" value="1"><output id="spreadV">1.00</output></label>
+      <label class="f"><span>Tint variety</span><input type="range" id="tint" min="0" max="1" step="0.01" value="0.35"><output id="tintV">0.35</output></label>
+      <label class="f"><span>Pose variety</span><input type="range" id="poses" min="1" max="32" step="1" value="16"><output id="posesV">16</output></label>
+      <label class="f"><span>Copy shadows</span><input type="checkbox" id="shadows" checked><span></span></label>
+      <p class="note">Copies share up to 32 distinct poses and draw in one call per material. Walk and jog copies circle their rings.</p>
+    </section>
+
+    <section aria-labelledby="h-scene">
+      <h2 id="h-scene"><b>6</b>Use in a scene</h2>
+      <p class="note">Copy this character, its motion, posture and crowd as a line for the Merced River or Fog Hollow scenes. Paste it into their Guests panel, or near the top of a Director script.</p>
+      <label class="f"><span>Name</span><input type="text" id="gName" value="troupe" spellcheck="false" autocomplete="off"><span></span></label>
+      <div class="row"><button type="button" id="copyScene">Copy for scenes</button></div>
+      <p class="note" id="sceneLine" style="word-break:break-word;font-family:inherit"></p>
+      <p class="note">Sable is built into the scenes. Another model has to be added in the scene's Guests panel first, with the same file name.</p>
+    </section>
+  </aside>
+
+  <main class="view" id="viewWrap">
+    <canvas id="view" aria-label="3D viewport: drag to orbit, scroll to zoom"></canvas>
+    <div class="hud" aria-live="polite"><span id="hTris">—</span><span id="hBones">—</span><span id="hCalls">—</span><span id="hFps">—</span></div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="viewdrop" id="viewdrop" hidden>Drop to load</div>
+  </main>
+</div>
+
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const $ = id => document.getElementById(id);
+const V3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+
+/* ===================== built-in motion: CC0 mocap (Universal Animation Library, Quaternius) on a 19-bone humanoid ===================== */
+const MOCAP = {"fps":30,"bones":["hips","spine","chest","neck","head","clavL","upperArmL","foreArmL","handL","thighL","shinL","footL","clavR","upperArmR","foreArmR","handR","thighR","shinR","footR"],"parents":[null,"hips","spine","chest","neck","chest","clavL","upperArmL","foreArmL","hips","thighL","shinL","chest","clavR","upperArmR","foreArmR","hips","thighR","shinR"],"rest":{"hips":[0,0.97,0],"spine":[0,1.07,0],"chest":[0,1.25,0],"neck":[0,1.47,-0.005],"head":[0,1.57,0],"clavL":[0.04,1.42,-0.01],"upperArmL":[0.185,1.44,0],"foreArmL":[0.19,1.15,-0.01],"handL":[0.19,0.89,0.01],"thighL":[0.09,0.93,0],"shinL":[0.085,0.49,0.01],"footL":[0.09,0.07,-0.01],"clavR":[-0.04,1.42,-0.01],"upperArmR":[-0.185,1.44,0],"foreArmR":[-0.19,1.15,-0.01],"handR":[-0.19,0.89,0.01],"thighR":[-0.09,0.93,0],"shinR":[-0.085,0.49,0.01],"footR":[-0.09,0.07,-0.01]},"clips":{"dance":{"n":31,"dur":1,"speed":-0.0018398571371874507,"stride":-0.0018398571371874507,"ph0":0.7666666666666667,"q":"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","pos":"l3NuvSfPcj+oMI+8UsyEvcqHcj+9IKu8VlONvVDXcT8Ph9W8C1mRve6ZcD/5gwO92hWRvb+cbj8wSh29XXCMvcWdaz/9tDa9PWqAvcMEaD+kpk29d6hevTUKZj+SQWK9srgyvduxZT+GQHS966H7vMKiZz9DtoG9tVmCvEsnbT9szoe9cKRnOnU7cT+dhYu9hqKVPJ+9cz8qyI29oScSPQVPdT9Suo69W/dVPYNMdj+RpI69s5eIPZXOdj+a8429ZE6XPSpTdj/yfYu9Ic2fPUJbdT9Mf4i9K1aiPZXecz8GU4W9SxufPdO3cT9t+IG90j2WPaOkbj92JXy92AKFPYjxaD9WZXC9lJ1dPVsYZj85OGG9QqsoPQLOZT8Wpk691R/aPEpZZz//+zi93pc0POSSaT8bzCC9auScuz4VbD+Eowe9NJ6jvP5ybj+V1OC8qvMLvTp+cD9lqrm8/Z1AvY8Ecj9YRJ28l3NuvSfPcj+oMI+8"},"walk":{"n":41,"dur":1.3333333730697632,"speed":1.0171793744884599,"stride":1.35623920640369,"ph0":0,"q":"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","pos":"+QihvOjYaz/zTKU5ZYNwvKvlaj9KkJ85bIUZvMKYaj/cepM5h5p9uzH1aj8VRII5ic/gOl3vaz/UbFo5spnvOw5tbT+wXis5IltRPLFlbz/2VPg4/v6TPN94cT/SoqI4s1y9PPGHcz98/zM4LT3kPEB0dT9T1Ig3swUEPSMfdz+xnkG1ToUSPVsSeD+fqme1vuQdPTNfeD91Hic3U5QlPbECeD/iEAI4jVcpPXoIdz8rZ4A4H0UpPc+KdT/wHtA4mOkjPVSScz/j5BY5jYAbPV1/cT/lz0U5hz0QPYdwbz8t9nE5CVQCPXCEbT+bM4w5Lu/jPLjZaz8kDps5ldO8PHbmaj84LqA5PrmSPISZaj/HUZ45zaNMPOb1aj9AY5U5DjnhOwHwaz/Ch4U53d+VOp1tbT9EPl45hlmUuylmbz/OlSc5W/IjvDx5cT9YCOU4NR95vDGIcz93E4Y4bx6kvGJ0dT+dTuU3BurHvCYfdz8jsRo2yubjvDsSeD9vQdCzi5z5vPVeeD+taVA3CjIEvVgCeD9PJyI4de0HvQcIdz+RHaE4q/EHvUCKdT+NlgI5LKMCvbCRcz/0mTo5h330vKd+cT/Y/G45XO3dvMNvbz9Hoo05VvrBvKODbT8FlZ05+QihvOjYaz/zTKU5"},"jog":{"n":29,"dur":0.9166666865348816,"speed":2.6790801665298036,"stride":2.455823539214194,"ph0":0.9642857142857143,"q":"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","pos":"B0yjPLd5YD8oMeC7nruVPNTJUT/HmOC7T612PDlbRj+RQuG7b4kvPH2lQT9r9OG7s3K6OympRT/sguK7EJn4Odw5Uz/NzOK7Vm6Gu6SPYj/xoeK73EIEvN3hbz/hUuK7V9Q6vKvAeT/97uG7LZFmvCU5fz8QgeG7KDiCvHwtfz8OJuG7OBuLvKkbfD8k6uC7MVCQvFmPdj/9xOC74+eSvCN1bj/eseC7rLeTvOKOYz+Yq+C7aVOHvFcOVT9LA+G7BJFXvHSVSD+Pn+G7jlAVvAbqQT8pNeK7bd2nuzaTQz9EmOK7TDeruvV/Tz/6xuK7XnAfOyb1Xj/quuK7sXnFOxPobD8fiOK74OEZPMC6dz/NNOK7Vt1LPEpefj+jyOG7gPx0PLk/fz+XVOG7N5iKPAMofT+C6+C7omaWPKtkeD/OluC7CSKePA/tcD/dWuC7B0yjPLd5YD8oMeC7"},"idle":{"n":89,"dur":2.9166667461395264,"speed":0.0000014979905540320267,"stride":0.000004369139234976338,"ph0":0.8068181818181818,"q":"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GBIaAGUAtn7vERwAdgC7fssRHgCHAMF+rBEhAJkAxX6QESMArADJfngRJgC/AMx+YxEoANEAz35RESoA5ADRfkIRLQD2ANN+NREvAAcB1H4rETEAGAHWfiMRMwAnAdd+HBE1ADUB134YETcAQgHYfhQROABNAdh+EhE5AFYB2H4REToAXQHZfhAROwBiAdl+EBE7AGQB2X4XETsAYwHYfigROwBfAdV+RhE6AFgB0X5xETkATgHMfqgROABBAcR+6BE2ADEBu34xEjUAIAGxfn8SMwAOAaZ+1BIwAPkAmn4tEy4A5ACMfogTKwDPAH9+5RMoALkAcH5BFCYAowBifpwUIwCNAFN+9BQgAHgARX5IFR0AZQA3fpUVGgBSACp+3RUXAEEAHX4bFhUAMgATflAWEgAmAAl+eRYRABwAAn6WFhAAFQD9fasWDwARAPl9lvz4//j/83+4/Pf/8//0f/789f/o//Z/YP3y/9n/+H/X/e//x//6f1z+6/+z//x/4P7o/5///n9Y/+b/jP/+f7z/5P99//9/BQDj/3L//38nAOL/bP//fx4A4v9t//9/CADi/27//3/l/+L/cf//f7j/4v90//9/gf/j/3j//n9B/+P/ff/+f/v+4/+C//5/sv7k/4j//X9o/uT/jv/8fxz+5f+V//t/0/3m/5z/+n+N/ef/o//5f0396P+q//h/Ev3p/7L/9n/h/Ov/uf/1f7387P/A//R/pfzu/8j/9H+a/O//z//zf5v88f/V//N/qPzy/9z/9H+9/PP/4f/0f9r89P/n//V/+/z2/+v/9n8g/fb/8P/3f0n99//z//h/dP34//X/+X+f/fj/9//5f8r9+P/4//p/8/34//f/+38a/vj/9v/7fz7+9//z//x/YP73/+///H+A/vb/6v/9f53+9f/k//1/uP7z/93//X/R/vL/1v/+f+f+8P/O//5/+/7v/8b//n8O/+3/vf/+fx3/7P+0//5/K//q/6v//n84/+j/of/+f0L/5/+Y//5/TP/l/4///n9T/+P/hv/+f1n/4v99//5/Xv/g/3X//n9j/9//bf/+f2b/3v9m//5/aP/d/2D//n9q/9z/W//+f2v/2/9W//5/bP/a/1P//n9s/9r/UP/+f2z/2v9P//5/af/a/1D//n9g/9r/Uv/+f1H/2v9V//5/O//b/1r//n8f/9z/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tfd1f10ByPe093R/eAHJ97T3dH+SAcr3s/d0f6wBy/ey93R/xgHL97H3c3/eAcz3sPdzf/UBzfew93J/CALN96/3cn8XAs33rvdyfyACzfeu93J/HwLM9673cn8TAsr3rvdyf/8Bx/et93J/5gHE96v3cn/JAcH3qfdyf6kBvven93J/hgG796T3cn9hAbn3ofdyfzwBuPed93J/FwG295n3cn/zALX3lPdyf9AAs/eQ93J/rwCz94v3cn+RALL3hfdxf3cAsfeA93F/YQCx93r3cX9SALL3dfdxf0sAs/dv93B/TQC092r3cH9WALb3Zfdwf2QAt/dg93B/dQC491z3b3+HALn3WPdvf5sAuvdV929/sAC791P3b3/FALz3Ufduf9wAvfdP925/8wC+90/3bn8IAb/3UPdufx0BwPdT925/MQHB91f3bn9FAcL3Xvdvf1cBw/dm929/aQHF93D3cH96Acb3evdwf4sBx/eF93F/nQHI9473cX+vAcn3l/dyf8EByvee93J/0wHL96P3cn/mAcz3p/dyf/gBzPeq93J/CALN96z3cn8WAs33rvdyfyMCzfeu93J/XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0XflqzLIOBnRd+WrMsg4GdF35asyyDgZ0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","pos":"kpmNOy87bT9+yx69ZWCNO7I0bT9NrR69bgiNOy4obT/lfh691KWMO/0WbT/gSh69sUyMO0MCbT/XGx69dhOMO9rqbD+d/R29GkiMOzjRbD9jGR69NrKMO7K2bD9fUR69gUWNO4SbbD8dnx69+veNO+p/bD9V/R69CcOOOytkbD+EaB+9yKKPO8pIbD+c3h+9TYqQOxUubD/KWCC9+nWRO1EUbD8p1SC9jWKSO8v7az8FUiG9/UuTOxrlaz89zSG9viiUO/bRaz+5QSK9OvaUO2HCaz8yriK9VK+VO2W3az/qDyO96U2WOy6yaz+bYyO9wcKWO1q1az85oSO9suqWO0u/az9VtiO93uGWOynMaz+xsSO9g7eWOwzbaz9XmyO9K3mWO37raz9seiO9lyqWO0j9az/9UCO9qc+VOxkQbD/8ICO9LG2VO4EjbD/+7CK9jgSVO1s3bD/ItSK9t5aUO41LbD/XeyK9gSOUOwRgbD8APyK9xKuTO5V0bD/L/yG91jCTOySJbD/sviG9N7OSO5udbD+jfCG9RjOSO+CxbD8ZOSG94LCRO83FbD9E9CC9nSyROyTZbD93riC9MKeQO9frbD8HaCC9CSGQO8P9bD8wISC9jJqPO7wObT8q2h+9uBSPO/IdbT+akx+9HZKOO6UqbT+uTh+9CRqOOxM0bT9MDx+9jZ+NO+g4bT/k2h69+gONO1w3bT9juB69EiqLO+MrbT+bix69wRKIO18abT+tVx69kPeDO5QEbT9PKB69Tg9+O9XrbD9LCh69r8NyO+bQbD+uDR699OhlO0e0bD+BPh69Ta5XO8yWbD8FiR69OkRIO+d4bD+X5R69oNY3O/xabD9uTh+90HUmO3A9bD/cwB+9Qz4UO/EgbD83OiC9cJMBOycGbD9itiC9u2DdOnLtaz8wMyG9Kpq3OkTXaz+XriG9aEqSOrvEaz8oJiK9JEFcOsy3az/zlSK93iQXOkGyaz/X+SK9pjOrOdKzaz+5TiO9tMa+OEm7az/ZkCO9PL0EuWvGaz8WtSO9kF6puW3Taz/stSO9lUgBuqvhaz8GpCO97pomutjwaz9EhiO9uZxEuq4AbD/aYSO9xmtZuh8RbD+tNyO9p/pkugAibD+FCSO9wAljujIzbD9L2CK98ilQuqJEbD99pCK9IIkpujpWbD+jbiK97dTOufJnbD+8NiK9eC8ruLN5bD9U/SG9oZPUOW2LbD+RwiG9iTByOhWdbD+jhiG9/E7COp2ubD/PSSG98qMFO+u/bD/sCyG9o0snO/DQbD9gzSC9q71EO5DhbD9NjiC9WY1dO7TxbD/STiC9X/5xO00BbT8RDyC9z42AO/EPbT8+zx+9ujyGO34dbT/Zjx+9FSGKO2EpbT+YUR+9Q2uMO+4ybT91Fh+9kpmNOy87bT9+yx69"}}};
+const dec = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+const OURS = MOCAP.bones, OI = Object.fromEntries(OURS.map((b, i) => [b, i]));
+const MC = Object.fromEntries(Object.entries(MOCAP.clips).map(([k, c]) => {
+  const q = new Int16Array(dec(c.q)), Q = new Float32Array(q.length); for (let i = 0; i < q.length; i++) Q[i] = q[i]/32767;
+  return [k, { ...c, Q, pos:new Float32Array(dec(c.pos)) }];
+}));
+const MC_LABEL = { dance:'Dance', walk:'Walk', jog:'Jog', idle:'Chat' };
+// the source skeleton the clips were baked on: bones at rest carry no rotation
+const SRC = (() => {
+  const root = new THREE.Group(), B = [];
+  OURS.forEach((name, i) => { const b = new THREE.Bone(), p = MOCAP.parents[i], w = V3(...MOCAP.rest[name]);
+    b.position.copy(p ? w.clone().sub(V3(...MOCAP.rest[p])) : w); (p ? B[OI[p]] : root).add(b); B.push(b); });
+  return { root, B, rest:Object.fromEntries(OURS.map(n => [n, V3(...MOCAP.rest[n])])) };
+})();
+const _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion();
+function srcPose(c, f0, f1, k){
+  for (let b = 0; b < OURS.length; b++){ const o = b*c.n*4; _qa.fromArray(c.Q, o + f0*4); _qb.fromArray(c.Q, o + f1*4); SRC.B[b].quaternion.slerpQuaternions(_qa, _qb, k); }
+  SRC.B[0].position.set(...[0, 1, 2].map(j => c.pos[f0*3 + j] + (c.pos[f1*3 + j] - c.pos[f0*3 + j])*k));
+  SRC.root.updateMatrixWorld(true);
+}
+// which of our bones each limb direction is measured to
+const CHILD = { hips:'spine', spine:'chest', chest:'neck', neck:'head', clavL:'upperArmL', upperArmL:'foreArmL', foreArmL:'handL', clavR:'upperArmR', upperArmR:'foreArmR', foreArmR:'handR',
+  thighL:'shinL', shinL:'footL', thighR:'shinR', shinR:'footR' };
+function srcDir(name){
+  const R = SRC.rest;
+  if (CHILD[name]) return R[CHILD[name]].clone().sub(R[name]).normalize();
+  if (name.startsWith('hand')) return R[name].clone().sub(R['foreArm' + name.slice(-1)]).normalize();
+  if (name.startsWith('foot')) return V3(0, -0.45, 0.89).normalize();
+  if (name === 'head') return R.head.clone().sub(R.neck).normalize();
+  return V3(0, 1, 0);
+}
+
+/* ===================== viewport ===================== */
+const canvas = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.setClearColor(0, 0);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping;
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+const camera = new THREE.PerspectiveCamera(40, 1, 0.02, 400);
+camera.position.set(2.6, 1.8, 4.2);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0.9, 0); controls.enableDamping = true; controls.maxPolarAngle = Math.PI*0.52;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f94, 1.1));
+const sun = new THREE.DirectionalLight(0xfff6ea, 2.6);
+sun.position.set(-4, 9, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-12, right:12, top:12, bottom:-12, near:0.5, far:40 }); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ color:0x404448, opacity:0.28 }));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(40, 40, 0x000000, 0x000000); grid.material.transparent = true; grid.material.opacity = 0.08; scene.add(grid);
+const stage = new THREE.Group(); scene.add(stage);
+
+/* ===================== state ===================== */
+const ST = { src:null, wrap:null, name:'', clips:[], clip:null, mixer:null, action:null, time:0, playing:true, speed:1,
+  skinned:[], skeletons:[], map:{}, facing:0, auto:null, helper:null, inst:null, count:1, rest:null };
+const toastEl = $('toast'); let toastT = 0;
+function toast(msg, err = false){ toastEl.textContent = msg; toastEl.classList.toggle('err', err); toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), err ? 6000 : 2600); }
+
+/* ===================== loading ===================== */
+// The artifact viewer blocks fetch(), even of blob: and data: URLs, so nothing here fetches:
+// files are read into memory and handed to the parsers; a multi-file .gltf is packed into one GLB first,
+// and textures load through <img> (allowed) rather than ImageBitmapLoader (which fetches).
+async function gltfToGlb(text, files){
+  const j = JSON.parse(text), byName = new Map(files.map(f => [f.name, f])), chunks = [];
+  let total = 0;
+  const add = u8 => { const off = total; chunks.push(u8); total += u8.length; const pad = (4 - total % 4) % 4; if (pad){ chunks.push(new Uint8Array(pad)); total += pad; } return off; };
+  const bytesOf = async uri => {
+    if (uri.startsWith('data:')){ const s = atob(uri.slice(uri.indexOf(',') + 1)), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+    const name = decodeURIComponent(uri.split(/[\/]/).pop()), f = byName.get(name);
+    if (!f) throw new Error(`${name} is missing: drop it together with the .gltf`);
+    return new Uint8Array(await f.arrayBuffer());
+  };
+  const offs = [];
+  for (const b of j.buffers || []) offs.push(add(await bytesOf(b.uri)));
+  for (const bv of j.bufferViews || []){ bv.byteOffset = (bv.byteOffset || 0) + offs[bv.buffer]; bv.buffer = 0; }
+  for (const im of j.images || []) if (im.uri){
+    const u8 = await bytesOf(im.uri), off = add(u8);
+    j.bufferViews = j.bufferViews || []; j.bufferViews.push({ buffer:0, byteOffset:off, byteLength:u8.length });
+    im.bufferView = j.bufferViews.length - 1;
+    im.mimeType = im.mimeType || (/png/i.test(im.uri.slice(0, 40)) || /\.png$/i.test(im.uri) ? 'image/png' : /webp/i.test(im.uri) ? 'image/webp' : 'image/jpeg');
+    delete im.uri;
+  }
+  j.buffers = total ? [{ byteLength:total }] : [];
+  let json = new TextEncoder().encode(JSON.stringify(j));
+  const jp = (4 - json.length % 4) % 4; if (jp){ const t = new Uint8Array(json.length + jp).fill(0x20); t.set(json); json = t; }
+  const len = 12 + 8 + json.length + (total ? 8 + total : 0), out = new Uint8Array(len), dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, len, true);
+  dv.setUint32(12, json.length, true); dv.setUint32(16, 0x4E4F534A, true); out.set(json, 20);
+  if (total){ let o = 20 + json.length; dv.setUint32(o, total, true); dv.setUint32(o + 4, 0x004E4942, true); o += 8; for (const c of chunks){ out.set(c, o); o += c.length; } }
+  return out.buffer;
+}
+function parseGltf(buffer, manager){
+  return new Promise((resolve, reject) => {
+    const loader = new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
+    const cib = window.createImageBitmap;
+    try { window.createImageBitmap = undefined; } catch(e){}
+    try { loader.parse(buffer, '', resolve, reject); }
+    finally { try { window.createImageBitmap = cib; } catch(e){} }
+  });
+}
+async function loadFiles(files){
+  files = [...files];
+  const main = files.find(f => /\.(glb|gltf|fbx|obj)$/i.test(f.name));
+  if (!main){ toast('Choose a .glb, .gltf, .fbx or .obj file (add its .bin and textures alongside a .gltf).', true); return; }
+  // textures an FBX or OBJ points at load as images from the dropped files
+  const urls = new Map(files.map(f => [f.name, URL.createObjectURL(f)]));
+  const manager = new THREE.LoadingManager();
+  manager.setURLModifier(url => { const name = decodeURIComponent(url.split(/[\/]/).pop().split('?')[0]); return urls.get(name) || url; });
+  const ext = main.name.split('.').pop().toLowerCase();
+  toast(`Loading ${main.name}…`);
+  try {
+    let obj, anims = [];
+    if (ext === 'glb'){ const g = await parseGltf(await main.arrayBuffer(), manager); obj = g.scene; anims = g.animations; }
+    else if (ext === 'gltf'){ const g = await parseGltf(await gltfToGlb(await main.text(), files), manager); obj = g.scene; anims = g.animations; }
+    else if (ext === 'fbx'){ obj = new FBXLoader(manager).parse(await main.arrayBuffer(), ''); anims = obj.animations || []; }
+    else { obj = new OBJLoader(manager).parse(await main.text()); }
+    setModel(obj, anims, main.name);
+  } catch(e){
+    console.error(e);
+    const m = String(e && e.message || e);
+    toast(/draco/i.test(m) ? 'This file uses Draco compression, which this page cannot decode. In Blender, export the glTF again with compression turned off.'
+      : /ktx|basis/i.test(m) ? 'This file uses KTX2 textures, which this page cannot decode. Export it with PNG or JPEG textures.'
+      : `Could not read ${main.name}: ${m}`, true);
+  }
+}
+
+function disposeModel(){
+  clearInstances();
+  if (ST.helper){ scene.remove(ST.helper); ST.helper = null; }
+  if (ST.wrap){ stage.remove(ST.wrap); ST.wrap.traverse(o => { if (o.isMesh){ o.geometry.dispose(); } }); }
+  clearJointEditor();
+}
+function setModel(obj, anims, name){
+  disposeModel();
+  ST.src = obj; ST.name = name; ST.auto = null; ST.rest = null; ST.clip = null; ST.action = null; ST.time = 0;
+  const wrap = new THREE.Group(); wrap.add(obj); stage.add(wrap); ST.wrap = wrap;
+  obj.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });
+  // stand it on the floor at about human height, centred
+  wrap.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj, true), size = box.getSize(V3());
+  const h = size.y || 1, s = 1.8/h;
+  ST.nativeH = h;
+  // measured once here: re-measuring a skinned mesh precisely means skinning every vertex on the CPU
+  ST.fp = Math.max(0.5, Math.max(size.x, size.z)*s);
+  ST.minYSrc = box.min.clone().applyMatrix4(obj.matrixWorld.clone().invert()).y;
+  wrap.scale.setScalar(s);
+  wrap.position.set(-(box.min.x + box.max.x)/2*s, -box.min.y*s, -(box.min.z + box.max.z)/2*s);
+  wrap.updateMatrixWorld(true);
+  scanModel();
+  ST.mixer = new THREE.AnimationMixer(obj);
+  ST.clips = anims.map(c => ({ name:c.name || 'Animation', clip:c, kind:'own' }));
+  autoMap();
+  refreshMocap();
+  controls.target.set(0, 0.9, 0);
+  facts();
+  setCount(+$('count').value);
+}
+function scanModel(){
+  ST.skinned = []; const sk = new Set();
+  ST.src.traverse(o => { if (o.isSkinnedMesh){ ST.skinned.push(o); sk.add(o.skeleton); } });
+  ST.skeletons = [...sk];
+  if (ST.helper){ scene.remove(ST.helper); ST.helper = null; }
+  if ($('showBones').getAttribute('aria-pressed') === 'true') toggleHelper(true);
+}
+function facts(){
+  let tris = 0, meshes = 0;
+  ST.src.traverse(o => { if (o.isMesh){ meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.getAttribute('position').count)/3; } });
+  const bones = ST.skeletons.reduce((a, s) => Math.max(a, s.bones.length), 0);
+  const own = ST.clips.filter(c => c.kind === 'own').length;
+  $('facts').innerHTML = '';
+  for (const [k, v] of [['File', ST.name], ['Meshes', meshes], ['Triangles', Math.round(tris).toLocaleString()], ['Bones', bones || 'none'], ['Animations', own || 'none']]){
+    const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; $('facts').append(dt, dd);
+  }
+  $('hTris').textContent = `${Math.round(tris).toLocaleString()} tris`;
+  $('hBones').textContent = bones ? `${bones} bones` : 'no skeleton';
+}
+
+/* ===================== humanoid bone matching ===================== */
+const sideOf = n => /left|(^|[^a-z])l([^a-z]|$)|[a-z0-9]L$|\.l$|_l$/i.test(n) && !/right/i.test(n) ? 'L' : /right|(^|[^a-z])r([^a-z]|$)|[a-z0-9]R$|\.r$|_r$/i.test(n) ? 'R' : '';
+const clean = n => n.toLowerCase().replace(/mixamorig[:_]?/g, '').replace(/^(def|org|mch)[-_]/, '').replace(/^j_bip_[clr]_/, '');
+function mainSkeleton(){ return ST.skeletons.slice().sort((a, b) => b.bones.length - a.bones.length)[0]; }
+function autoMap(){
+  ST.map = {};
+  const sk = mainSkeleton();
+  if (!sk){ updateRigUI(); return; }
+  const bones = sk.bones, find = (re, side = '', not = null) => bones.find(b => re.test(clean(b.name)) && (!not || !not.test(clean(b.name))) && (!side || sideOf(b.name) === side));
+  const fingers = /index|thumb|middle|ring|pinky|finger|toe|end|twist|nub|ik|pole|target/;
+  const hips = find(/hips|pelvis/) || bones.find(b => !b.parent || !b.parent.isBone);
+  const neck = find(/neck/, '', fingers), head = find(/head/, '', /top|end|nub/);
+  const M = {};
+  if (hips) M.hips = hips;
+  if (neck) M.neck = neck;
+  if (head) M.head = head;
+  // the spine: the bones between hips and neck
+  if (hips && neck){
+    const chain = []; let b = neck.parent;
+    while (b && b !== hips && b.isBone){ chain.unshift(b); b = b.parent; }
+    if (b === hips && chain.length){ M.spine = chain[0]; if (chain.length > 1) M.chest = chain[chain.length - 1]; }
+  }
+  // limbs: by name first, then up the hierarchy (IK rigs often hang the feet off the root instead of the shins)
+  const up = b => b && b.parent && b.parent.isBone ? b.parent : null;
+  for (const s of ['L', 'R']){
+    const hand = find(/hand|wrist/, s, fingers), foot = find(/foot|ankle/, s, fingers);
+    const fa = find(/forearm|fore_arm|lower_?arm|elbow/, s, fingers) || up(hand);
+    const ua = find(/upper_?arm|^arm|[^a-z]arm$/, s, /fore|lower|twist/) || up(fa);
+    const cl = find(/clav|shoulder/, s, fingers) || up(ua);
+    const sh = find(/shin|calf|lower_?leg|knee|^leg|[^a-z]leg$/, s, /up|upper|thigh/) || up(foot);
+    const th = find(/thigh|up_?leg|upper_?leg/, s, fingers) || up(sh);
+    if (hand) M['hand' + s] = hand;
+    if (fa && fa !== hand) M['foreArm' + s] = fa;
+    if (ua && ua !== fa) M['upperArm' + s] = ua;
+    if (cl && cl !== ua && cl !== M.chest && cl !== M.spine && cl !== M.neck && cl !== hips) M['clav' + s] = cl;
+    if (foot) M['foot' + s] = foot;
+    if (sh && sh !== foot && sh !== hips) M['shin' + s] = sh;
+    if (th && th !== sh && th !== hips) M['thigh' + s] = th;
+  }
+  ST.map = M;
+  detectFacing();
+  updateRigUI();
+}
+// which way the rig faces, from where its left side is
+function detectFacing(){
+  const M = ST.map, a = M.handL || M.thighL, b = M.handR || M.thighR;
+  if (!a || !b) return;
+  ST.src.updateMatrixWorld(true);
+  const inv = ST.src.matrixWorld.clone().invert();
+  const pa = a.getWorldPosition(V3()).applyMatrix4(inv), pb = b.getWorldPosition(V3()).applyMatrix4(inv);
+  const d = pa.sub(pb); d.y = 0; if (d.lengthSq() < 1e-8) return;
+  const f = d.normalize().cross(V3(0, 1, 0));    // left x up = forward
+  ST.facing = Math.atan2(f.x, f.z);
+  const opts = [...$('facing').options].map(o => +o.value);
+  $('facing').value = String(opts.reduce((best, v) => Math.abs(Math.atan2(Math.sin(v - ST.facing), Math.cos(v - ST.facing))) < Math.abs(Math.atan2(Math.sin(best - ST.facing), Math.cos(best - ST.facing))) ? v : best, opts[0]));
+}
+const CORE = ['hips', 'spine', 'neck', 'head', 'upperArmL', 'foreArmL', 'upperArmR', 'foreArmR', 'thighL', 'shinL', 'thighR', 'shinR'];
+const humanoid = () => CORE.filter(b => ST.map[b]).length >= 10;
+function updateRigUI(){
+  const sk = mainSkeleton(), n = Object.keys(ST.map).length, chip = $('rigChip');
+  chip.className = 'chip';
+  if (!ST.src){ chip.textContent = 'No model'; }
+  else if (ST.auto){ chip.classList.add('ok'); chip.textContent = 'Auto-rigged: 19 bones'; }
+  else if (!sk){ chip.classList.add('warn'); chip.textContent = 'No skeleton: auto-rig it'; }
+  else if (humanoid()){ chip.classList.add('ok'); chip.textContent = `Humanoid: ${n} of 19 bones matched`; }
+  else { chip.classList.add('warn'); chip.textContent = `Skeleton of ${sk.bones.length} bones, not matched as humanoid`; }
+  $('autorig').disabled = !ST.src || (!!sk && !ST.auto && humanoid());
+  $('autorig').textContent = ST.auto ? 'Re-run auto-rig' : 'Auto-rig as humanoid';
+  $('editJoints').disabled = !ST.auto;
+  // the manual mapping table
+  const box = $('map'); box.innerHTML = '';
+  if (sk){
+    for (const ours of OURS){
+      const lab = document.createElement('span'); lab.textContent = ours;
+      const sel = document.createElement('select'); sel.id = 'map-' + ours; sel.setAttribute('aria-label', `Bone for ${ours}`);
+      sel.append(new Option('—', ''));
+      for (const b of sk.bones) sel.append(new Option(b.name, b.uuid, false, ST.map[ours] === b));
+      sel.addEventListener('change', () => { const b = sk.bones.find(x => x.uuid === sel.value); if (b) ST.map[ours] = b; else delete ST.map[ours]; refreshMocap(); updateRigUI(); });
+      box.append(lab, sel);
+    }
+  }
+  $('mapBox').hidden = !sk;
+}
+
+/* ===================== retargeting the built-in clips onto any matched skeleton ===================== */
+function relMatrix(o, inv){ return o.matrixWorld.clone().premultiply(inv); }
+function retarget(key){
+  const c = MC[key], M = ST.map, src = ST.src;
+  src.updateMatrixWorld(true);
+  const inv = src.matrixWorld.clone().invert();
+  const R = new THREE.Quaternion().setFromAxisAngle(V3(0, 1, 0), ST.facing), Ri = R.clone().invert();
+  const sk = mainSkeleton(), bones = sk.bones.slice();
+  const depth = b => { let d = 0; while (b.parent){ d++; b = b.parent; } return d; };
+  bones.sort((a, b) => depth(a) - depth(b));
+  // rest: each target bone's local and source-space rotation and position
+  const rest = new Map();
+  for (const b of bones){
+    const m = relMatrix(b, inv), p = V3(), q = new THREE.Quaternion(), s = V3(); m.decompose(p, q, s);
+    rest.set(b, { local:b.quaternion.clone(), wq:q, wp:p });
+  }
+  const parentRest = b => { if (rest.has(b.parent)) return null; const m = relMatrix(b.parent, inv), p = V3(), q = new THREE.Quaternion(), s = V3(); m.decompose(p, q, s); return { q, m }; };
+  const byTarget = new Map(Object.entries(M).map(([ours, b]) => [b, ours]));
+  // per bone: the swing that lines the target's rest limb up with ours
+  const C = new Map();
+  for (const [ours, b] of Object.entries(M)){
+    let dT = null;
+    const childOurs = CHILD[ours];
+    if (childOurs && M[childOurs]) dT = rest.get(M[childOurs]).wp.clone().sub(rest.get(b).wp);
+    else if (ours.startsWith('hand') && M['foreArm' + ours.slice(-1)]) dT = rest.get(b).wp.clone().sub(rest.get(M['foreArm' + ours.slice(-1)]).wp);
+    else if (ours === 'head' && M.neck) dT = rest.get(b).wp.clone().sub(rest.get(M.neck).wp);
+    else if (ours.startsWith('foot')){ const toe = b.children.find(k => k.isBone && rest.has(k) && /toe|ball/i.test(k.name)); if (toe) dT = rest.get(toe).wp.clone().sub(rest.get(b).wp); }
+    // anything else keeps its own rest orientation (C = identity) rather than guessing from an unrelated child
+    const dS = srcDir(ours).applyQuaternion(R);
+    C.set(b, dT && dT.lengthSq() > 1e-10 ? new THREE.Quaternion().setFromUnitVectors(dT.normalize(), dS) : new THREE.Quaternion());
+  }
+  // hips travel, scaled from our leg length to theirs
+  const minY = ST.minYSrc ?? 0;
+  const hipsT = M.hips, ratio = hipsT ? (rest.get(hipsT).wp.y - minY)/SRC.rest.hips.y : 1;
+  const hipsParent = hipsT ? relMatrix(hipsT.parent, inv).invert() : null;
+  const times = new Float32Array(c.n), tracks = new Map();
+  for (const [b] of C) tracks.set(b, new Float32Array(c.n*4));
+  const hp = new Float32Array(c.n*3);
+  const world = new Map(), tmp = new THREE.Quaternion(), qs = new THREE.Quaternion();
+  const frames = [], extraPos = [];
+  const chainWorld = (b, f) => frames[f].get(b);
+  const parentStaticInv = (b, parentM, f) => (frames[f].get(b.parent) || parentM).clone().invert();
+  for (let f = 0; f < c.n; f++){
+    const wm = new Map(); frames.push(wm);
+    times[f] = c.dur*f/(c.n - 1);
+    srcPose(c, f, f, 0);
+    world.clear();
+    for (const b of bones){
+      const pw = world.get(b.parent) || (parentRest(b) || { q:new THREE.Quaternion() }).q;
+      const ours = byTarget.get(b);
+      if (ours){
+        SRC.B[OI[ours]].getWorldQuaternion(qs); qs.premultiply(R).multiply(Ri);           // our motion, turned to face their way
+        const w = qs.clone().multiply(C.get(b)).multiply(rest.get(b).wq);
+        world.set(b, w);
+        tmp.copy(pw).invert().multiply(w).toArray(tracks.get(b), f*4);
+      } else world.set(b, pw.clone().multiply(rest.get(b).local));
+      // full world matrix too, so other bones can follow this one
+      const pm = wm.get(b.parent) || relMatrix(b.parent, inv);
+      const lq = pw.clone().invert().multiply(world.get(b));
+      let lp = b.position;
+      if (b === hipsT){ const d = SRC.B[0].position.clone().sub(SRC.rest.hips).applyQuaternion(R).multiplyScalar(ratio); lp = rest.get(hipsT).wp.clone().add(d).applyMatrix4(hipsParent); }
+      wm.set(b, pm.clone().multiply(new THREE.Matrix4().compose(lp, lq, b.scale)));
+    }
+    if (hipsT){
+      const d = SRC.B[0].position.clone().sub(SRC.rest.hips).applyQuaternion(R).multiplyScalar(ratio);
+      rest.get(hipsT).wp.clone().add(d).applyMatrix4(hipsParent).toArray(hp, f*3);
+    }
+  }
+  // bones whose real parent is not their chain parent (an IK foot under the root) ride along with the chain
+  const ourParent = Object.fromEntries(OURS.map((b, i) => [b, MOCAP.parents[i]]));
+  for (const [ours, b] of Object.entries(M)){
+    const tp = ourParent[ours] && M[ourParent[ours]];
+    if (!tp || b === hipsT || b.parent === tp) continue;
+    const restTp = relMatrix(tp, inv), off = rest.get(b).wp.clone().applyMatrix4(restTp.clone().invert());
+    const arr = new Float32Array(c.n*3), parentM = relMatrix(b.parent, inv);
+    for (let f = 0; f < c.n; f++){
+      srcPose(c, f, f, 0);
+      const wm = chainWorld(tp, f);
+      off.clone().applyMatrix4(wm).applyMatrix4(parentStaticInv(b, parentM, f)).toArray(arr, f*3);
+    }
+    extraPos.push(new THREE.VectorKeyframeTrack(`${b.name}.position`, times, arr));
+  }
+  const out = [...extraPos];
+  for (const [b, arr] of tracks) out.push(new THREE.QuaternionKeyframeTrack(`${b.name}.quaternion`, times, arr));
+  if (hipsT) out.push(new THREE.VectorKeyframeTrack(`${hipsT.name}.position`, times, hp));
+  const clip = new THREE.AnimationClip(MC_LABEL[key], c.dur, out);
+  clip.userData = { speed:c.speed*ratio*src.getWorldScale(V3()).x, mocap:key };
+  return clip;
+}
+function refreshMocap(){
+  const keep = ST.clip;
+  ST.clips = ST.clips.filter(c => c.kind === 'own');
+  poseRest(); computeFollow();
+  if (humanoid() || ST.auto){
+    for (const k of Object.keys(MC)){ try { ST.clips.push({ name:MC_LABEL[k], clip:retarget(k), kind:'mocap', key:k }); } catch(e){ console.warn('retarget', k, e); } }
+  }
+  buildClipList();
+  const again = ST.clips.find(c => keep && c.name === keep.name && c.kind === keep.kind);
+  if (again) selectClip(again); else pickDefaultClip();
+}
+// put every bone back at the pose it loaded in, before measuring rest
+function poseRest(){
+  if (!ST.rest){ ST.rest = new Map(); }
+  ST.mixer && ST.mixer.stopAllAction();
+  for (const sk of ST.skeletons) for (const b of sk.bones){
+    if (!ST.rest.has(b)) ST.rest.set(b, { p:b.position.clone(), q:b.quaternion.clone(), s:b.scale.clone() });
+    const r = ST.rest.get(b); b.position.copy(r.p); b.quaternion.copy(r.q); b.scale.copy(r.s);
+  }
+  ST.src.updateMatrixWorld(true);
+}
+
+/* ===================== auto-rig: fit a humanoid skeleton and paint weights ===================== */
+const DEFS = MOCAP.bones.map((b, i) => [b, MOCAP.parents[i]]);
+function canonicalVerts(){
+  // every vertex in the model's own space, turned so the model faces +Z
+  const src = ST.src; src.updateMatrixWorld(true);
+  const inv = src.matrixWorld.clone().invert(), turn = new THREE.Matrix4().makeRotationY(-ST.facing), parts = [];
+  src.traverse(o => { if (o.isMesh && !o.userData.benchSkin){ const m = relMatrix(o, inv); parts.push({ mesh:o, m, mc:m.clone().premultiply(turn) }); } });
+  return parts;
+}
+function fitJoints(parts){
+  const P = [];
+  for (const { mesh, mc } of parts){ const pos = mesh.geometry.getAttribute('position'), v = V3(); const step = Math.max(1, Math.floor(pos.count/40000)); for (let i = 0; i < pos.count; i += step){ v.fromBufferAttribute(pos, i).applyMatrix4(mc); P.push(v.x, v.y, v.z); } }
+  let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (let i = 0; i < P.length; i += 3){ minY = Math.min(minY, P[i + 1]); maxY = Math.max(maxY, P[i + 1]); minX = Math.min(minX, P[i]); maxX = Math.max(maxX, P[i]); minZ = Math.min(minZ, P[i + 2]); maxZ = Math.max(maxZ, P[i + 2]); }
+  const H = maxY - minY, cx = (minX + maxX)/2, cz = (minZ + maxZ)/2, y = f => minY + f*H;
+  const band = (f0, f1, test = () => true) => { const out = []; for (let i = 0; i < P.length; i += 3){ const yy = P[i + 1]; if (yy >= y(f0) && yy <= y(f1) && test(P[i], yy, P[i + 2])) out.push(P[i], yy, P[i + 2]); } return out; };
+  // legs: the two clusters at shin height
+  const shins = band(0.2, 0.3);
+  let sl = 0, nl = 0, sr = 0, nr = 0; for (let i = 0; i < shins.length; i += 3){ const x = shins[i] - cx; if (x > 0){ sl += x; nl++; } else { sr += x; nr++; } }
+  const legX = Math.max(0.035*H, Math.min(0.12*H, ((nl ? sl/nl : 0.05*H) - (nr ? sr/nr : -0.05*H))/2));
+  // arms: the farthest point on each side above the hips
+  const arm = s => { let best = null; for (let i = 0; i < P.length; i += 3){ const x = (P[i] - cx)*s, yy = P[i + 1]; if (yy > y(0.32) && yy < y(0.96) && x > 0.1*H && (!best || x > best[0])) best = [x, yy, P[i + 2]]; } return best; };
+  const shoulderY = y(0.815), upperX = 0.105*H;
+  const J = {};
+  const at = (x, yy, z = cz) => V3(cx + x, yy, z);
+  J.hips = at(0, y(0.535)); J.spine = at(0, y(0.6)); J.chest = at(0, y(0.715)); J.neck = at(0, y(0.835)); J.head = at(0, y(0.875));
+  for (const [s, k] of [['L', 1], ['R', -1]]){
+    const tip = arm(k) || [0.25*H, y(0.5), cz];
+    const sh = at(k*upperX, shoulderY), hand = at(k*tip[0], tip[1], tip[2]);
+    const d = hand.clone().sub(sh), L = d.length(), wrist = sh.clone().addScaledVector(d, Math.max(0.3, (L - 0.085*H)/L));
+    J['clav' + s] = at(k*0.025*H, y(0.805)); J['upperArm' + s] = sh;
+    J['foreArm' + s] = sh.clone().lerp(wrist, 0.5).add(V3(0, 0, -0.012*H)); J['hand' + s] = wrist;
+    J['thigh' + s] = at(k*legX, y(0.525)); J['shin' + s] = at(k*legX, y(0.285), cz + 0.012*H); J['foot' + s] = at(k*legX, y(0.045));
+  }
+  return { J, H };
+}
+function segmentsFrom(J, H){
+  const S = {};
+  for (const [b] of DEFS){
+    let a = J[b], e;
+    if (CHILD[b]) e = J[CHILD[b]];
+    else if (b === 'head') e = a.clone().add(V3(0, 0.12*H, 0));
+    else if (b.startsWith('hand')){ const fa = J['foreArm' + b.slice(-1)]; e = a.clone().add(a.clone().sub(fa).normalize().multiplyScalar(0.08*H)); }
+    else e = a.clone().add(V3(0, -0.03*H, 0.11*H));
+    S[b] = [a, e];
+  }
+  return S;
+}
+function paintAndBind(parts, J, H){
+  const S = segmentsFrom(J, H), names = DEFS.map(d => d[0]);
+  const ab = V3(), ap = V3(), v = V3();
+  const segDist = (p, [a, b]) => { ab.subVectors(b, a); ap.subVectors(p, a); const t = Math.max(0, Math.min(1, ap.dot(ab)/ab.lengthSq())); return ap.addScaledVector(ab, -t).length(); };
+  const shoulderX = Math.abs(J.upperArmL.x - J.hips.x), armsDown = Math.abs(J.handL.y - J.upperArmL.y) > 0.2*H;
+  const turn = new THREE.Matrix4().makeRotationY(ST.facing);
+  // the skeleton, in the model's own space
+  const group = new THREE.Group(); group.name = 'BenchRig'; group.userData.benchRig = true;
+  const B = {}, list = [];
+  for (const [b, p] of DEFS){
+    const bone = new THREE.Bone(); bone.name = b;
+    const w = J[b].clone().applyMatrix4(turn);
+    if (p){ bone.position.copy(w.clone().sub(J[p].clone().applyMatrix4(turn))); B[p].add(bone); } else { bone.position.copy(w); group.add(bone); }
+    B[b] = bone; list.push(bone);
+  }
+  ST.src.add(group); group.updateMatrixWorld(true);
+  const skeleton = new THREE.Skeleton(list);
+  for (const part of parts){
+    const g = part.mesh.geometry.clone(); g.applyMatrix4(part.m);
+    const pos = g.getAttribute('position'), n = pos.count, si = new Uint16Array(n*4), sw = new Float32Array(n*4);
+    const inv = new THREE.Matrix4().makeRotationY(-ST.facing), w = new Float32Array(names.length);
+    for (let i = 0; i < n; i++){
+      v.fromBufferAttribute(pos, i).applyMatrix4(inv);
+      const side = v.x - J.hips.x;
+      for (let k = 0; k < names.length; k++){
+        const b = names[k], s = b.endsWith('L') ? 1 : b.endsWith('R') ? -1 : 0;
+        if (s && side*s < -0.015*H){ w[k] = 0; continue; }
+        const isArm = /upperArm|foreArm|hand/.test(b);
+        if (isArm && armsDown && Math.abs(side) < shoulderX - 0.03*H && v.y < J.upperArmL.y - 0.04*H){ w[k] = 0; continue; }
+        let d = segDist(v, S[b]); if (b.startsWith('clav')) d *= 1.4;
+        w[k] = 1/Math.pow(d + 0.004*H, 4);
+      }
+      const top = [...w.keys()].sort((a, b) => w[b] - w[a]).slice(0, 4), sum = top.reduce((a, k) => a + w[k], 0) || 1;
+      top.forEach((k, j) => { si[i*4 + j] = k; sw[i*4 + j] = w[k]/sum; });
+    }
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    const sm = new THREE.SkinnedMesh(g, part.mesh.material); sm.userData.benchSkin = true;
+    sm.castShadow = true; sm.receiveShadow = true; sm.frustumCulled = false;
+    group.add(sm); sm.bind(skeleton);
+    part.mesh.visible = false; part.mesh.userData.benchHidden = true;
+  }
+  return { group, skeleton, B };
+}
+function autoRig(){
+  if (!ST.src) return;
+  clearInstances();
+  // undo an earlier auto-rig first
+  if (ST.auto){ ST.src.remove(ST.auto.group); ST.src.traverse(o => { if (o.userData.benchHidden) o.visible = true; }); }
+  ST.mixer.stopAllAction(); ST.rest = null;
+  const parts = canonicalVerts().filter(p => p.mesh.visible !== false || p.mesh.userData.benchHidden);
+  if (!parts.length){ toast('There is no mesh to rig.', true); return; }
+  const { J, H } = ST.auto?.J && ST.auto.keepJoints ? { J:ST.auto.J, H:ST.auto.H } : fitJoints(parts);
+  const rig = paintAndBind(parts, J, H);
+  ST.auto = { ...rig, J, H, parts };
+  scanModel();
+  ST.map = Object.fromEntries(DEFS.map(([b]) => [b, rig.B[b]]));
+  updateRigUI(); refreshMocap(); facts(); setCount(+$('count').value);
+  if (jointEdit) showJointEditor();
+  toast('Rigged: 19 bones, weights painted from bone distance.');
+}
+
+/* ===================== joint editor ===================== */
+let jointEdit = false, handles = [], dragging = null;
+const handleGeo = new THREE.SphereGeometry(1, 16, 12), handleMat = new THREE.MeshBasicMaterial({ color:0xd4552b, depthTest:false, transparent:true, opacity:0.9 });
+function clearJointEditor(){ for (const h of handles) scene.remove(h); handles = []; }
+function showJointEditor(){
+  clearJointEditor();
+  if (!ST.auto) return;
+  const turn = new THREE.Matrix4().makeRotationY(ST.facing);
+  for (const [b] of DEFS){
+    const h = new THREE.Mesh(handleGeo, handleMat); h.renderOrder = 10; h.userData.bone = b;
+    h.position.copy(ST.src.localToWorld(ST.auto.J[b].clone().applyMatrix4(turn))); h.scale.setScalar(0.025);
+    scene.add(h); handles.push(h);
+  }
+}
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), dragPlane = new THREE.Plane();
+function pointerNDC(e){ const r = canvas.getBoundingClientRect(); ndc.set((e.clientX - r.left)/r.width*2 - 1, -(e.clientY - r.top)/r.height*2 + 1); }
+canvas.addEventListener('pointerdown', e => {
+  if (!jointEdit || !handles.length) return;
+  pointerNDC(e); ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(handles)[0]; if (!hit) return;
+  dragging = hit.object; controls.enabled = false; canvas.setPointerCapture(e.pointerId);
+  dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(V3()).negate(), dragging.position);
+}, true);
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  pointerNDC(e); ray.setFromCamera(ndc, camera);
+  const p = V3(); if (!ray.ray.intersectPlane(dragPlane, p)) return;
+  dragging.position.copy(p);
+  const inv = new THREE.Matrix4().makeRotationY(-ST.facing), b = dragging.userData.bone;
+  ST.auto.J[b] = ST.src.worldToLocal(p.clone()).applyMatrix4(inv);
+  if ($('mirror').checked && /[LR]$/.test(b)){
+    const o = b.slice(0, -1) + (b.endsWith('L') ? 'R' : 'L'), q = ST.auto.J[b].clone(); q.x = 2*ST.auto.J.hips.x - q.x; ST.auto.J[o] = q;
+    const h = handles.find(x => x.userData.bone === o); if (h) h.position.copy(ST.src.localToWorld(q.clone().applyMatrix4(new THREE.Matrix4().makeRotationY(ST.facing))));
+  }
+});
+const endDrag = () => { if (!dragging) return; dragging = null; controls.enabled = true; ST.auto.keepJoints = true; autoRig(); };
+canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+
+/* ===================== posture: additive turns on top of the animation ===================== */
+const PKEYS = ['pTurn', 'pLean', 'pHeadTurn', 'pNod', 'pTilt', 'pShoulders', 'pArms', 'pElbows', 'pStance', 'pKnees'];
+const POSTURE = Object.fromEntries(PKEYS.map(k => [k, 0]));
+const DEG = Math.PI/180, _pw = new THREE.Quaternion(), _bw = new THREE.Quaternion(), _sq = new THREE.Quaternion(), _d = new THREE.Quaternion();
+// every bone back to its loaded pose, without stopping the animation (so untracked bones never drift)
+function restoreRest(){ if (!ST.rest) return; for (const [b, r] of ST.rest){ b.position.copy(r.p); b.quaternion.copy(r.q); b.scale.copy(r.s); } }
+// turn a bone about an axis in the character's own frame (x = its left, y = up, z = forward)
+function turnBone(bone, axis, ang){
+  if (!bone || !ang) return;
+  const R = _sq.setFromAxisAngle(V3(0, 1, 0), ST.facing), ax = axis.clone().applyQuaternion(R).applyQuaternion(ST.src.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  bone.parent.getWorldQuaternion(_pw); bone.getWorldQuaternion(_bw);
+  _d.setFromAxisAngle(ax, ang);
+  bone.quaternion.copy(_pw.invert().multiply(_d.multiply(_bw)));
+  bone.updateMatrixWorld(true);
+}
+const AX = V3(1, 0, 0), AY = V3(0, 1, 0), AZ = V3(0, 0, 1);
+function applyPosture(){
+  const P = POSTURE, M = ST.map;
+  ST.wrap.rotation.y = P.pTurn*DEG;
+  const legs = P.pStance || P.pKnees, any = PKEYS.some(k => k !== 'pTurn' && P[k]);
+  if (!any || !Object.keys(M).length) return;
+  ST.src.updateMatrixWorld(true);
+  if (P.pLean){ turnBone(M.spine, AX, P.pLean*DEG*0.5); turnBone(M.chest || M.spine, AX, P.pLean*DEG*0.5); }
+  if (P.pHeadTurn){ turnBone(M.neck, AY, P.pHeadTurn*DEG*0.4); turnBone(M.head, AY, P.pHeadTurn*DEG*0.6); }
+  if (P.pNod){ turnBone(M.neck, AX, P.pNod*DEG*0.4); turnBone(M.head, AX, P.pNod*DEG*0.6); }
+  if (P.pTilt) turnBone(M.head, AZ, -P.pTilt*DEG);
+  for (const [s, k] of [['L', 1], ['R', -1]]){
+    turnBone(M['clav' + s], AZ, k*P.pShoulders*DEG);
+    turnBone(M['upperArm' + s], AZ, k*P.pArms*DEG);
+    turnBone(M['foreArm' + s], AX, -P.pElbows*DEG);
+    turnBone(M['thigh' + s], AZ, k*P.pStance*DEG);
+    if (P.pKnees){ turnBone(M['thigh' + s], AX, -P.pKnees*DEG*0.55); turnBone(M['shin' + s], AX, P.pKnees*DEG); }
+  }
+  // feet hung from the root (IK rigs) are carried to the ends of the adjusted shins
+  if (legs) for (const f of ST.follow || []){
+    const inv = ST.src.matrixWorld.clone().invert();
+    const want = f.off.clone().applyMatrix4(relMatrix(f.tp, inv)).applyMatrix4(relMatrix(f.b.parent, inv).invert());
+    f.b.position.copy(want); f.b.updateMatrixWorld(true);
+  }
+}
+function computeFollow(){
+  ST.follow = [];
+  ST.src.updateMatrixWorld(true);
+  const inv = ST.src.matrixWorld.clone().invert(), parent = Object.fromEntries(OURS.map((b, i) => [b, MOCAP.parents[i]]));
+  for (const [ours, b] of Object.entries(ST.map)){
+    const tp = parent[ours] && ST.map[parent[ours]];
+    if (!tp || ours === 'hips' || b.parent === tp) continue;
+    const off = b.getWorldPosition(V3()).applyMatrix4(inv).applyMatrix4(relMatrix(tp, inv).invert());
+    ST.follow.push({ b, tp, off });
+  }
+}
+// the pose for one moment: rest, then the clip, then the posture
+function poseAt(time){
+  restoreRest();
+  if (ST.action) ST.mixer.setTime(time);
+  else ST.src.updateMatrixWorld(true);
+  applyPosture();
+}
+for (const k of PKEYS) $(k).addEventListener('input', () => { POSTURE[k] = +$(k).value; $(k + 'V').textContent = POSTURE[k] + '°'; });
+$('pReset').addEventListener('click', () => { for (const k of PKEYS){ $(k).value = 0; POSTURE[k] = 0; $(k + 'V').textContent = '0°'; } });
+
+/* ===================== use in a scene: a "guest" line for the scene director ===================== */
+const PNAMES = { turn:'pTurn', lean:'pLean', headturn:'pHeadTurn', nod:'pNod', tilt:'pTilt', shoulders:'pShoulders', arms:'pArms', elbows:'pElbows', stance:'pStance', knees:'pKnees' };
+function sceneLine(){
+  if (!ST.src) return null;
+  const name = ($('gName').value.trim().replace(/[^A-Za-z0-9_]/g, '') || 'troupe').replace(/^\d/, 'g$&');
+  const model = /^sable(\.glb)?$/i.test(ST.name || '') ? 'sable' : ST.name;
+  const clip = ST.clip ? (ST.clip.kind === 'mocap' ? (ST.clip.key === 'idle' ? 'chat' : ST.clip.key) : ST.clip.name) : 'chat';
+  const n = ST.inst ? +$('count').value : 1;
+  // glTF is in metres; anything outside human-ish sizes was probably modelled in other units
+  const height = ST.nativeH > 0.3 && ST.nativeH < 30 ? +ST.nativeH.toFixed(2) : 1.75;
+  const post = Object.entries(PNAMES).filter(([, k]) => POSTURE[k]).map(([nm, k]) => `${nm}=${Math.round(POSTURE[k])}`).join(',');
+  return `guest ${name} model ${/\s/.test(model) ? model.replace(/\s+/g, '_') : model} clip ${/\s/.test(clip) ? clip.replace(/\s+/g, '_') : clip} count ${n} layout ${$('layout').value} spacing ${(+$('spacing').value).toFixed(2)} spread ${(+$('spread').value).toFixed(2)} tint ${(+$('tint').value).toFixed(2)} height ${height}`
+    + (post ? ` posture ${post}` : '') + ' at stage facing 180';
+}
+$('copyScene').addEventListener('click', () => {
+  const line = sceneLine();
+  if (!line){ toast('Load a character first.', true); return; }
+  $('sceneLine').textContent = line;
+  const done = () => toast('Copied. Paste it into a scene\'s Guests panel or Director script.');
+  try { navigator.clipboard.writeText(line).then(done, () => toast('Select the line below and copy it.')); } catch(e){ toast('Select the line below and copy it.'); }
+});
+
+/* ===================== clips and playback ===================== */
+function buildClipList(){
+  const box = $('clips'); box.innerHTML = '';
+  if (!ST.clips.length){ const n = document.createElement('span'); n.className = 'note'; n.textContent = ST.src ? 'No animations yet. Rig the model to use the built-in motion.' : 'Load a model to see its animations.'; box.append(n); return; }
+  for (const c of ST.clips){
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(c === ST.clip));
+    b.append(c.name); const t = document.createElement('span'); t.className = 'tag'; t.textContent = c.kind === 'own' ? 'file' : 'mocap'; b.append(t);
+    b.addEventListener('click', () => selectClip(c)); box.append(b);
+  }
+}
+function pickDefaultClip(){ selectClip(ST.clips.find(c => c.kind === 'own') || ST.clips.find(c => c.kind === 'mocap' && c.key === 'dance') || null); }
+function selectClip(c){
+  ST.clip = c; ST.mixer.stopAllAction();
+  if (c){ ST.action = ST.mixer.clipAction(c.clip); ST.action.play(); $('scrub').max = c.clip.duration.toFixed(3); }
+  else { ST.action = null; poseRest(); }
+  [...$('clips').querySelectorAll('button')].forEach((b, i) => b.setAttribute('aria-pressed', String(ST.clips[i] === c)));
+  if (ST.inst) layoutInstances();
+}
+$('play').addEventListener('click', () => { ST.playing = !ST.playing; $('play').textContent = ST.playing ? 'Pause' : 'Play'; $('play').setAttribute('aria-pressed', String(ST.playing)); });
+$('scrub').addEventListener('input', () => { ST.time = +$('scrub').value; });
+$('speed').addEventListener('input', () => { ST.speed = +$('speed').value; $('speedV').textContent = ST.speed.toFixed(2) + '×'; });
+
+/* ===================== instancing: one draw per material, poses from a shared bone texture ===================== */
+const POSES = 32;
+const INST_HEAD = `
+  attribute vec4 iXform; attribute vec3 iTint; attribute float iPose;
+  varying vec3 vTint;
+  mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
+  vec3 instWorld(vec3 local){ vec4 w = modelMatrix*vec4(local, 1.0); return rotY(iXform.z)*(w.xyz*iXform.w) + vec3(iXform.x, 0.0, iXform.y); }`;
+function patchMaterial(mat, boneCount, depth = false){
+  const m = mat.clone();
+  m.onBeforeCompile = sh => {
+    let vs = sh.vertexShader.replace('#include <common>', '#include <common>\n' + INST_HEAD)
+      .replace('#include <project_vertex>', 'vTint = iTint; vec4 mvPosition = viewMatrix*vec4(instWorld(transformed), 1.0); gl_Position = projectionMatrix*mvPosition;')
+      .replace('#include <worldpos_vertex>', 'vec4 worldPosition = vec4(instWorld(transformed), 1.0);')
+      .replace('#include <defaultnormal_vertex>', 'vec3 transformedNormal = mat3(viewMatrix)*(rotY(iXform.z)*normalize(mat3(modelMatrix)*objectNormal));\n#ifdef FLIP_SIDED\ntransformedNormal = -transformedNormal;\n#endif');
+    if (boneCount) vs = vs.replace('#include <skinning_pars_vertex>', THREE.ShaderChunk.skinning_pars_vertex.replace('int j = int( i ) * 4;', `int j = ( int( i ) + int( iPose + 0.5 )*${boneCount} ) * 4;`));
+    sh.vertexShader = vs;
+    if (!depth) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vTint;').replace('vec4 diffuseColor = vec4( diffuse, opacity );', 'vec4 diffuseColor = vec4( diffuse*vTint, opacity );');
+  };
+  m.customProgramCacheKey = () => `bench-inst-${boneCount}-${depth}`;
+  return m;
+}
+function clearInstances(){
+  if (!ST.inst) return;
+  for (const it of ST.inst.items){ it.mesh.parent && it.mesh.parent.remove(it.mesh); it.geo.dispose(); }
+  if (ST.inst.skel.length) restoreRest();
+  for (const s of ST.inst.skel){ s.skeleton.boneTexture = s.saved; }
+  ST.src && ST.src.traverse(o => { if (o.userData.benchInstHidden){ o.visible = true; delete o.userData.benchInstHidden; } });
+  ST.inst = null;
+}
+function setCount(n){
+  ST.count = n; $('countV').textContent = n;
+  if (!ST.src) return;
+  if (n <= 1){ clearInstances(); return; }
+  if (!ST.inst) buildInstances();
+  layoutInstances();
+}
+// a group of triangles out of a multi-material geometry, with only the vertices it uses
+function extractGroup(geo, start, count){
+  const idx = geo.index ? geo.index.array : null, remap = new Map(), order = [], tri = new Uint32Array(count);
+  for (let i = 0; i < count; i++){ const v = idx ? idx[start + i] : start + i; let k = remap.get(v); if (k === undefined){ k = order.length; remap.set(v, k); order.push(v); } tri[i] = k; }
+  const out = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal', 'uv', 'skinIndex', 'skinWeight']){
+    const a = geo.getAttribute(name); if (!a) continue;
+    const isIdx = name === 'skinIndex', arr = isIdx ? new Uint16Array(order.length*4) : new Float32Array(order.length*a.itemSize);
+    for (let i = 0; i < order.length; i++) for (let c = 0; c < a.itemSize; c++){
+      // getX..getW undo normalisation once, in every three.js version (getComponent already does in r170)
+      const v = c === 0 ? a.getX(order[i]) : c === 1 ? a.getY(order[i]) : c === 2 ? a.getZ(order[i]) : a.getW(order[i]);
+      arr[i*a.itemSize + c] = v;
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize));
+  }
+  out.setIndex(new THREE.BufferAttribute(order.length > 65535 ? tri : new Uint16Array(tri), 1));
+  if (!out.getAttribute('normal')) out.computeVertexNormals();
+  return out;
+}
+// every visible part of the model, in the skeleton's bind frame, ready to merge by material
+function crowdParts(){
+  restoreRest(); ST.src.updateMatrixWorld(true);
+  const sk = ST.skeletons.length === 1 ? ST.skeletons[0] : null, parts = [];
+  const wrapInv = ST.wrap.matrixWorld.clone().invert();
+  ST.src.traverse(o => {
+    if (!o.isMesh || o.userData.benchInstanced || o.userData.benchHidden || !o.visible) return;
+    let toFrame, bone = -1, skinned = false;
+    if (o.isSkinnedMesh){
+      if (o.skeleton !== sk) throw new Error('more than one skeleton');
+      toFrame = o.bindMatrix.clone(); skinned = true;
+    } else {
+      let a = o.parent; while (a && !a.isBone) a = a.parent;
+      if (sk && a && sk.bones.includes(a)){
+        // a rigid part hung on a bone (eyes, a lantern): give it to that bone with full weight
+        bone = sk.bones.indexOf(a);
+        toFrame = sk.boneInverses[bone].clone().invert().multiply(a.matrixWorld.clone().invert().multiply(o.matrixWorld));
+        skinned = true;
+      } else toFrame = wrapInv.clone().multiply(o.matrixWorld);     // static, kept in the model's own frame
+    }
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    const total = o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count;
+    const groups = o.geometry.groups.length ? o.geometry.groups : [{ start:0, count:total, materialIndex:0 }];
+    for (const g of groups){
+      const mat = mats[g.materialIndex ?? 0]; if (!mat) continue;
+      const geo = extractGroup(o.geometry, g.start, Math.min(g.count, total - g.start));
+      geo.applyMatrix4(toFrame);
+      if (bone >= 0){
+        const n = geo.getAttribute('position').count, si = new Uint16Array(n*4), sw = new Float32Array(n*4);
+        for (let i = 0; i < n; i++){ si[i*4] = bone; sw[i*4] = 1; }
+        geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
+      }
+      parts.push({ geo, mat, skinned, src:o });
+    }
+  });
+  return { sk, parts };
+}
+const matKey = (m, skinned) => [skinned ? 'S' : 'T', m.map ? 'map' + m.map.uuid : 'flat', (m.metalness || 0) > 0.5 ? 'metal' : '',
+  (m.emissive && m.emissive.getHex() && (m.emissiveIntensity ?? 1) > 0) ? 'emit' + m.uuid : '', (m.transparent || m.opacity < 1) ? 'tr' + m.uuid : '',
+  m.side !== THREE.FrontSide ? 'ds' : '', m.alphaTest ? 'at' + m.uuid : '', m.type].join('|');
+function buildInstances(){
+  clearInstances();
+  const N = 200, items = [], skel = [];
+  const xform = new Float32Array(N*4), tint = new Float32Array(N*3).fill(1), pose = new Float32Array(N);
+  let built;
+  try { built = crowdParts(); } catch(e){ console.warn('crowd merge skipped:', e.message); built = null; }
+  if (built){
+    const { sk, parts } = built, groups = new Map();
+    for (const pt of parts){ const k = matKey(pt.mat, pt.skinned); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(pt); }
+    if (sk){
+      const side = Math.ceil(Math.sqrt(POSES*sk.bones.length*4)/4)*4;
+      const data = new Float32Array(side*side*4), tex = new THREE.DataTexture(data, side, side, THREE.RGBAFormat, THREE.FloatType);
+      tex.needsUpdate = true; skel.push({ skeleton:sk, saved:sk.boneTexture, tex, data });
+    }
+    for (const [key, list] of groups){
+      const skinned = list[0].skinned, useUv = !!list[0].mat.map, col = new THREE.Color();
+      // the same attributes on every piece; each piece's material colour moves into vertex colours
+      const geos = list.map(pt => {
+        const g = pt.geo, n = g.getAttribute('position').count, c = new Float32Array(n*3);
+        col.copy(pt.mat.color || new THREE.Color(1, 1, 1)); for (let i = 0; i < n; i++) c.set([col.r, col.g, col.b], i*3);
+        g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+        if (useUv && !g.getAttribute('uv')) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n*2), 2));
+        if (!useUv) g.deleteAttribute('uv');
+        if (!skinned){ g.deleteAttribute('skinIndex'); g.deleteAttribute('skinWeight'); }
+        if (g.index && g.index.array instanceof Uint16Array) g.setIndex(new THREE.BufferAttribute(new Uint32Array(g.index.array), 1));
+        return g;
+      });
+      const merged = mergeGeometries(geos, false);
+      if (!merged){ console.warn('merge failed for', key); continue; }
+      const base = list[0].mat.clone();
+      base.vertexColors = true; if (base.color) base.color.set(1, 1, 1);
+      const rough = list.reduce((a, pt) => a + (pt.mat.roughness ?? 0.6), 0)/list.length; if ('roughness' in base) base.roughness = rough;
+      const geo = new THREE.InstancedBufferGeometry().copy(merged); geo.instanceCount = 1;
+      geo.setAttribute('iXform', new THREE.InstancedBufferAttribute(xform, 4)); geo.setAttribute('iTint', new THREE.InstancedBufferAttribute(tint, 3)); geo.setAttribute('iPose', new THREE.InstancedBufferAttribute(pose, 1));
+      const bc = skinned ? sk.bones.length : 0, mat = patchMaterial(base, bc);
+      let mesh;
+      if (skinned){ mesh = new THREE.SkinnedMesh(geo, mat); scene.add(mesh); mesh.bind(sk, new THREE.Matrix4()); }
+      else { mesh = new THREE.Mesh(geo, mat); ST.wrap.add(mesh); }
+      mesh.customDepthMaterial = patchMaterial(new THREE.MeshDepthMaterial({ depthPacking:THREE.RGBADepthPacking }), bc, true);
+      mesh.castShadow = $('shadows').checked; mesh.frustumCulled = false; mesh.userData.benchInstanced = true;
+      items.push({ mesh, geo });
+      merged.dispose(); for (const g of geos) g.dispose();
+    }
+    ST.src.traverse(o => { if (o.isMesh && !o.userData.benchInstanced && o.visible){ o.visible = false; o.userData.benchInstHidden = true; } });
+  } else {
+    // fallback: one instanced copy of each mesh as it is
+    const skMap = new Map();
+    for (const sk of ST.skeletons){
+      const side = Math.ceil(Math.sqrt(POSES*sk.bones.length*4)/4)*4;
+      const data = new Float32Array(side*side*4), tex = new THREE.DataTexture(data, side, side, THREE.RGBAFormat, THREE.FloatType);
+      tex.needsUpdate = true; const rec = { skeleton:sk, saved:sk.boneTexture, tex, data }; skMap.set(sk, rec); skel.push(rec);
+    }
+    ST.src.updateMatrixWorld(true);
+    ST.src.traverse(o => {
+      if (!o.isMesh || o.userData.benchInstanced || !o.visible || o.userData.benchHidden) return;
+      const geo = new THREE.InstancedBufferGeometry().copy(o.geometry); geo.instanceCount = 1;
+      geo.setAttribute('iXform', new THREE.InstancedBufferAttribute(xform, 4)); geo.setAttribute('iTint', new THREE.InstancedBufferAttribute(tint, 3)); geo.setAttribute('iPose', new THREE.InstancedBufferAttribute(pose, 1));
+      const bc = o.isSkinnedMesh ? o.skeleton.bones.length : 0;
+      const mats = Array.isArray(o.material) ? o.material.map(m => patchMaterial(m, bc)) : patchMaterial(o.material, bc);
+      let mesh;
+      if (o.isSkinnedMesh){ mesh = new THREE.SkinnedMesh(geo, mats); mesh.bind(o.skeleton, o.bindMatrix); mesh.bindMode = o.bindMode; }
+      else mesh = new THREE.Mesh(geo, mats);
+      mesh.customDepthMaterial = patchMaterial(new THREE.MeshDepthMaterial({ depthPacking:THREE.RGBADepthPacking }), bc, true);
+      mesh.position.copy(o.position); mesh.quaternion.copy(o.quaternion); mesh.scale.copy(o.scale);
+      mesh.castShadow = $('shadows').checked; mesh.frustumCulled = false; mesh.userData.benchInstanced = true;
+      o.parent.add(mesh); o.visible = false; o.userData.benchInstHidden = true;
+      items.push({ mesh, geo });
+    });
+  }
+  for (const rec of skel) rec.skeleton.boneTexture = rec.tex;
+  ST.inst = { items, skel, xform, tint, pose, N, slots:[] };
+}
+function layoutInstances(){
+  const I = ST.inst; if (!I) return;
+  const n = Math.min(ST.count, I.N), sp = +$('spacing').value, layout = $('layout').value, tv = +$('tint').value;
+  // footprint of one copy on the floor
+  const fp = ST.fp || 1;
+  const step = fp*sp;
+  let rnd = 7; const r = () => { rnd = (rnd*16807) % 2147483647; return rnd/2147483647; };
+  I.slots = [];
+  if (layout === 'grid'){
+    const cols = Math.ceil(Math.sqrt(n));
+    for (let i = 0; i < n; i++){ const cx = i % cols, cz = Math.floor(i/cols); I.slots.push({ x:(cx - (cols - 1)/2)*step, z:(cz - (Math.ceil(n/cols) - 1)/2)*step, ring:0 }); }
+  } else if (layout === 'scatter'){
+    const R = Math.sqrt(n)*step*0.75;
+    for (let i = 0; i < n; i++){ let x, z, k = 0; do { const a = r()*Math.PI*2, d = Math.sqrt(r())*R; x = Math.cos(a)*d; z = Math.sin(a)*d; k++; } while (k < 30 && I.slots.some(s => Math.hypot(s.x - x, s.z - z) < step*0.8)); I.slots.push({ x, z, ring:0, yaw:r()*0.8 - 0.4 }); }
+  } else {
+    let left = n, rad = 0, ri = 0;
+    while (left > 0){ const k = rad === 0 ? 1 : Math.min(left, Math.max(6, Math.floor(2*Math.PI*rad/step))); for (let j = 0; j < k; j++) I.slots.push({ ring:rad, a0:(j + (ri % 2)*0.5)/k*Math.PI*2, dir:ri % 2 ? -1 : 1 }); left -= k; ri++; rad += step; }
+  }
+  const col = new THREE.Color(), base = new THREE.Color();
+  for (let i = 0; i < n; i++){
+    const s = I.slots[i];
+    if (s.ring !== undefined && s.a0 !== undefined){ s.x = Math.sin(s.a0)*s.ring; s.z = Math.cos(s.a0)*s.ring; }
+    I.xform.set([s.x, s.z, s.yaw || 0, 1], i*4);
+    col.setHSL(r(), 0.55, 0.62); base.setRGB(1, 1, 1).lerp(col, tv);
+    I.tint.set([base.r, base.g, base.b], i*3);
+    I.pose[i] = i % Math.min(+$('poses').value, POSES, n);
+  }
+  for (const it of I.items){ it.geo.instanceCount = n; for (const k of ['iXform', 'iTint', 'iPose']) it.geo.getAttribute(k).needsUpdate = true; }
+  // pull the camera back until the whole crowd is in frame
+  const reach = I.slots.slice(0, n).reduce((m, s) => Math.max(m, Math.hypot(s.x, s.z)), 0) + fp;
+  const want = Math.max(4.6, reach*2.3), off = camera.position.clone().sub(controls.target);
+  if (off.length() < want) camera.position.copy(controls.target).addScaledVector(off.normalize(), want);
+  controls.maxDistance = Math.max(60, want*2);
+}
+// pose the source once per shared pose, then copy its bone matrices into the big texture
+function updateInstances(dt){
+  const I = ST.inst; if (!I) return;
+  const n = Math.min(ST.count, I.N), K = Math.min(+$('poses').value, POSES, n), spread = +$('spread').value;
+  const dur = ST.clip ? ST.clip.clip.duration : 1;
+  for (let k = 0; k < K; k++){
+    poseAt(ST.time + spread*dur*k/K);
+    ST.src.updateMatrixWorld(true);
+    for (const rec of I.skel){ rec.skeleton.update(); rec.data.set(rec.skeleton.boneMatrices, k*rec.skeleton.bones.length*16); }
+  }
+  for (const rec of I.skel) rec.tex.needsUpdate = true;
+  // walkers and joggers travel round their rings at their own pace
+  const speed = ST.clip?.clip.userData?.speed, moving = speed && /walk|jog/.test(ST.clip.clip.userData.mocap || '');
+  if ($('layout').value === 'rings' && moving){
+    for (let i = 0; i < n; i++){
+      const s = I.slots[i]; if (!s.ring) continue;
+      s.a0 += s.dir*speed*ST.speed*dt/s.ring;
+      I.xform.set([Math.sin(s.a0)*s.ring, Math.cos(s.a0)*s.ring, s.a0 + s.dir*Math.PI/2 - ST.facing - POSTURE.pTurn*DEG, 1], i*4);
+    }
+    for (const it of I.items) it.geo.getAttribute('iXform').needsUpdate = true;
+  }
+}
+
+/* ===================== the sample: an unrigged wooden mannequin in a T-pose ===================== */
+function sampleMannequin(){
+  const parts = [], wood = new THREE.MeshStandardMaterial({ color:0xc8915a, roughness:0.55 }), dark = new THREE.MeshStandardMaterial({ color:0x6b4426, roughness:0.5 });
+  const cap = (a, b, r) => { const A = V3(...a), B = V3(...b), d = B.clone().sub(A), g = new THREE.CapsuleGeometry(r, d.length(), 6, 16);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.normalize())); g.translate(...A.clone().add(B).multiplyScalar(0.5).toArray()); return g; };
+  const ball = (c, s) => { const g = new THREE.SphereGeometry(1, 24, 16); g.scale(...s); g.translate(...c); return g; };
+  parts.push(ball([0, 1.66, 0.01], [0.105, 0.125, 0.11]), cap([0, 1.47, 0], [0, 1.55, 0], 0.045));
+  parts.push(ball([0, 1.3, 0], [0.19, 0.2, 0.12]), ball([0, 1.07, 0], [0.15, 0.13, 0.11]), ball([0, 0.93, 0], [0.17, 0.11, 0.12]));
+  for (const s of [1, -1]){
+    parts.push(cap([s*0.2, 1.42, 0], [s*0.46, 1.42, 0], 0.05), cap([s*0.48, 1.42, 0], [s*0.72, 1.42, 0], 0.042), ball([s*0.8, 1.42, 0.01], [0.07, 0.04, 0.05]));
+    parts.push(cap([s*0.1, 0.9, 0], [s*0.1, 0.5, 0.01], 0.07), cap([s*0.1, 0.47, 0.01], [s*0.1, 0.1, 0], 0.055), ball([s*0.1, 0.05, 0.05], [0.06, 0.045, 0.12]));
+  }
+  const body = new THREE.Mesh(mergeGeometries(parts), wood);
+  const joints = [];
+  for (const s of [1, -1]) joints.push(ball([s*0.47, 1.42, 0], [0.05, 0.05, 0.05]), ball([s*0.1, 0.485, 0.01], [0.06, 0.06, 0.06]), ball([s*0.2, 1.42, 0], [0.065, 0.065, 0.065]));
+  const jm = new THREE.Mesh(mergeGeometries(joints), dark);
+  const g = new THREE.Group(); g.add(body, jm); g.name = 'Mannequin';
+  return g;
+}
+function loadSample(){
+  setModel(sampleMannequin(), [], 'sample-mannequin (built in)');
+  autoRig();
+}
+
+/* ===================== wiring ===================== */
+$('file').addEventListener('change', e => { if (e.target.files.length) loadFiles(e.target.files); e.target.value = ''; });
+$('sample').addEventListener('click', loadSample);
+// Sable Quill, the Frost Warden: exported from rival-warden/SABLE_rigged.blend and published next to this page
+async function loadSable(){
+  try {
+    toast('Loading Sable Quill…');
+    // the model travels inside this page, so nothing has to be fetched
+    const res = await fetch('models/sable.glb'); if (!res.ok) throw new Error('HTTP ' + res.status); const bin = await res.arrayBuffer();
+    await loadFiles([new File([bin], 'SABLE.glb')]);
+    return true;
+  } catch(e){ console.warn('Sable not available', e); toast('Could not load Sable Quill: ' + (e && e.message || e), true); return false; }
+}
+$('sampleSable').addEventListener('click', loadSable);
+$('autorig').addEventListener('click', () => { if (ST.auto) ST.auto.keepJoints = false; autoRig(); });
+$('editJoints').addEventListener('click', () => { jointEdit = !jointEdit; $('editJoints').setAttribute('aria-pressed', String(jointEdit)); $('mirrorRow').hidden = !jointEdit; if (jointEdit){ showJointEditor(); toast('Drag the orange joints. The weights repaint when you let go.'); } else clearJointEditor(); });
+function toggleHelper(on){ if (ST.helper){ scene.remove(ST.helper); ST.helper = null; } if (on && ST.src){ ST.helper = new THREE.SkeletonHelper(ST.src); ST.helper.material.depthTest = false; ST.helper.renderOrder = 9; scene.add(ST.helper); } }
+$('showBones').addEventListener('click', () => { const on = $('showBones').getAttribute('aria-pressed') !== 'true'; $('showBones').setAttribute('aria-pressed', String(on)); toggleHelper(on); });
+$('facing').addEventListener('change', () => { ST.facing = +$('facing').value; if (ST.auto){ ST.auto.keepJoints = false; autoRig(); } else refreshMocap(); });
+$('count').addEventListener('input', () => setCount(+$('count').value));
+for (const id of ['spacing', 'spread', 'tint']) $(id).addEventListener('input', () => { $(id + 'V').textContent = (+$(id).value).toFixed(2); if (id !== 'spread') layoutInstances(); });
+$('layout').addEventListener('change', layoutInstances);
+$('poses').addEventListener('input', () => { $('posesV').textContent = $('poses').value; layoutInstances(); });
+$('shadows').addEventListener('change', () => { if (ST.inst) for (const it of ST.inst.items) it.mesh.castShadow = $('shadows').checked; });
+const drop = $('drop'), wrapEl = $('viewWrap'), vd = $('viewdrop');
+for (const el of [drop, wrapEl]){
+  el.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); vd.hidden = false; });
+  el.addEventListener('dragleave', e => { if (e.target === el || e.target === vd){ drop.classList.remove('over'); vd.hidden = true; } });
+  el.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); vd.hidden = true; if (e.dataTransfer.files.length) loadFiles(e.dataTransfer.files); });
+}
+
+function resize(){ const r = wrapEl.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width/Math.max(1, r.height); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(wrapEl); resize();
+
+const clock = new THREE.Clock();
+let fpsN = 0, fpsT = 0;
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (ST.src && ST.action){
+    if (ST.playing){ ST.time = (ST.time + dt*ST.speed) % ST.clip.clip.duration; $('scrub').value = ST.time; }
+    $('scrubV').textContent = ST.time.toFixed(2);
+    if (ST.inst) updateInstances(dt); else poseAt(ST.time);
+  } else if (ST.inst) updateInstances(dt);
+  else if (ST.src) poseAt(0);
+  if (ST.helper) ST.helper.visible = !ST.inst;
+  controls.update();
+  renderer.render(scene, camera);
+  $('hCalls').textContent = `${renderer.info.render.calls} draw calls`;
+  fpsN++; fpsT += dt; if (fpsT > 0.5){ $('hFps').textContent = `${Math.round(fpsN/fpsT)} fps`; fpsN = 0; fpsT = 0; }
+});
+loadSable().then(ok => { if (!ok) loadSample(); });
+</script>
