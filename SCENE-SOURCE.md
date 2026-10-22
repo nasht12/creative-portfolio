@@ -17,3 +17,5 @@ Recent-block controls use an even two-column grid with a full-width Follow newes
 Incoming particle animations are restricted to transactions observed in the mempool; transactions without an observed origin appear in place rather than entering from a separate side.
 
 Startup includes five recorded pending transactions alongside the recorded block. Seed transactions are removed on the first live block without clearing real pending arrivals; preview labeling remains until that handoff.
+
+Removed the separate Follow newest control. The newest block is selected automatically while following live; clicking that block resumes live following after inspecting an older block.
