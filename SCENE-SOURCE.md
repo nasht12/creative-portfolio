@@ -9,3 +9,5 @@ Warm-start customization: a clearly labeled recorded block renders immediately; 
 Default composition uses orthographic projection, a centered vertical private-flow marker, aligned block column, and responsive framing. Orbit, pan, and zoom remain enabled.
 
 Restored the original perspective camera and diagonal block trail. Replaced the source marker with a pulsing assembly tray, low public arcs, and direct private entry from the block edge.
+
+Replaced the persistent introduction with a hover/click info panel, including live/replay state and interaction guidance. Removed the optional screen-reader announcement toggle.
