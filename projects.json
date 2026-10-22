@@ -32,7 +32,7 @@
     "tech": "React · Three.js · Ethereum",
     "format": "Interactive data visualization",
     "description": "An interactive view of Ethereum’s public mempool and block activity. Pending transactions become points, while blocks reveal transaction order, fees, and the flow from pending to confirmed.",
-    "image": "media/twelve-seconds-scene.png",
+    "image": "media/twelve-seconds-aligned.png",
     "url": "web3/",
     "category": "Web3 UI",
     "categoryDescription": "Blockchain interfaces & data visualization",
