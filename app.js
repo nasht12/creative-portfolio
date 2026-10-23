@@ -36,7 +36,7 @@ const point=new T.Vector3(),inverse=new T.Quaternion();freezeGallery=()=>{progre
 function render(){
  frame=0;current=reduced?progress:current+(progress-current)*.075;
  const focus=current,compact=width<=1000,centerY=.35;
- const intro=document.querySelector('.intro'),introAlpha=Math.max(0,1-Math.abs(progress)/2);
+ const intro=document.querySelector('.intro'),introAlpha=1;
  intro.style.opacity=introAlpha;intro.style.transform='none';
  const headerRect=document.querySelector('header').getBoundingClientRect();
  const footerRect=document.querySelector('footer').getBoundingClientRect();
