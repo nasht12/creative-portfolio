@@ -19,3 +19,5 @@ Incoming particle animations are restricted to transactions observed in the memp
 Startup includes five recorded pending transactions alongside the recorded block. Seed transactions are removed on the first live block without clearing real pending arrivals; preview labeling remains until that handoff.
 
 Removed the separate Follow newest control. The newest block is selected automatically while following live; clicking that block resumes live following after inspecting an older block.
+
+Named Block Factory throughout. Pending transaction points use a radius-2.4 spherical surface; the same mapping supplies their outgoing animation origins. A subtle spherical wireframe keeps the globe readable during low activity.
