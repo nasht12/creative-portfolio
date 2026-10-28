@@ -45,7 +45,7 @@
     "tech": "React · Three.js · Ethereum",
     "format": "Interactive data visualization",
     "description": "An interactive view of Ethereum’s public mempool and block activity. Pending transactions form a globe of points before flowing into confirmed blocks, revealing transaction order and fees.",
-    "image": "media/block-factory-globe.png",
+    "image": "media/block-factory-aligned.png",
     "url": "web3/",
     "category": "Web3 UI",
     "categoryDescription": "Blockchain interfaces & data visualization",
