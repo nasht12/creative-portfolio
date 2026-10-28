@@ -103,25 +103,6 @@
     "categoryDescription": "Interactive scenes & real-time graphics"
   },
   {
-    "id": "fog-hollow",
-    "title": "Fog Hollow",
-    "slug": "FOG_HOLLOW",
-    "tech": "Three.js",
-    "format": "Interactive browser scene",
-    "description": "After the three.js fog-scattering example. Dawn fog lies in the hollow; the low sun breaks through the firs and the far trees dissolve.",
-    "image": "media/fog-hollow.jpg",
-    "video": "https://nasht12.github.io/threejs-portfolio/media/fog-hollow.mp4",
-    "scene": "scenes/fog-hollow.html",
-    "controls": "Drag to look · W A S D to walk · Shift to hurry",
-    "pos": [
-      1.55,
-      6.35,
-      0.5
-    ],
-    "category": "Three.js",
-    "categoryDescription": "Interactive scenes & real-time graphics"
-  },
-  {
     "id": "indigo-ridge",
     "title": "Indigo Ridge",
     "slug": "INDIGO_RIDGE",
