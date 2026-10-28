@@ -141,44 +141,6 @@
     "categoryDescription": "Interactive scenes & real-time graphics"
   },
   {
-    "id": "dents-du-midi",
-    "title": "Dents du Midi",
-    "slug": "DENTS_DU_MIDI",
-    "tech": "Three.js",
-    "format": "Interactive browser scene",
-    "description": "After Gustave Courbet, 1877. A goatherd rests on the knoll above the lake while the herd grazes; cloud shadows cross the massif.",
-    "image": "media/dents-du-midi.jpg",
-    "video": null,
-    "scene": "scenes/dents-du-midi.html",
-    "controls": "Drag to look around · scroll to zoom",
-    "pos": [
-      2.15,
-      2.85,
-      0.8
-    ],
-    "category": "Three.js",
-    "categoryDescription": "Interactive scenes & real-time graphics"
-  },
-  {
-    "id": "gulf-stream-study",
-    "title": "Gulf Stream Study",
-    "slug": "GULF_STREAM_STUDY",
-    "tech": "Three.js",
-    "format": "Interactive browser scene",
-    "description": "The sea of Winslow Homer’s Gulf Stream, 1899. Only the water: turquoise swell running before the trade wind, the sun showing through every crest.",
-    "image": "media/gulf-stream-study.jpg",
-    "video": null,
-    "scene": "scenes/gulf-stream-study.html",
-    "controls": "Drag to look around",
-    "pos": [
-      -2.1,
-      2.9,
-      0.9
-    ],
-    "category": "Three.js",
-    "categoryDescription": "Interactive scenes & real-time graphics"
-  },
-  {
     "id": "rigging-bench",
     "title": "Rigging Bench",
     "slug": "RIGGING_BENCH",
