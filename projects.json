@@ -139,5 +139,31 @@
     ],
     "category": "Three.js",
     "categoryDescription": "Interactive scenes & real-time graphics"
+  },
+  {
+    "id": "flower_reflection",
+    "title": "Flower Reflection",
+    "slug": "FLOWER_REFLECTION",
+    "tech": "TouchDesigner",
+    "format": "Recorded generative study",
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative forms & motion studies",
+    "description": "A layered, flower-like form unfolds above a reflective surface. A study in repetition, fine geometry, and motion.",
+    "image": "media/flower-reflection-cover.jpg",
+    "video": "media/flower-reflection-preview.mp4",
+    "note": "TouchDesigner output · Muted looping preview. Use the video controls to pause or explore the recording."
+  },
+  {
+    "id": "grid_pop_green",
+    "title": "Grid Pop Green",
+    "slug": "GRID_POP_GREEN",
+    "tech": "TouchDesigner",
+    "format": "Recorded generative study",
+    "category": "TouchDesigner",
+    "categoryDescription": "Generative forms & motion studies",
+    "description": "A flowing sculptural surface moves through a rectangular frame, surrounded by a field of fine particles and green tones.",
+    "image": "media/grid-pop-green-cover.jpg",
+    "video": "media/grid-pop-green-preview.mp4",
+    "note": "TouchDesigner output · Muted looping preview. Use the video controls to pause or explore the recording."
   }
 ]
