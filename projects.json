@@ -39,6 +39,32 @@
     "note": "Read-only Ethereum visualization · Live data with a recorded replay fallback."
   },
   {
+    "id": "vathography-studies",
+    "title": "Vathography / Depth studies",
+    "slug": "VATHOGRAPHY_STUDIES",
+    "tech": "Photography · Depth estimation",
+    "format": "Interactive sample gallery",
+    "category": "Photographic studies",
+    "categoryDescription": "Depth, surface color & image experiments",
+    "description": "Photographs translated into estimated depth, then shaped into tonal bands and grayscale studies. Explore original-to-result comparisons from my Depth Exploration project.",
+    "image": "media/photo-studies/depth-sculpture.webp",
+    "url": "photo-studies.html#vathography",
+    "note": "Independent studies inspired by Karim Joseph Nassar’s Vathography. Photographs and interface by Abhinash Tummala; depth estimated with Depth Anything V2 Large."
+  },
+  {
+    "id": "askiagraphy-studies",
+    "title": "Askiagraphy / Albedo studies",
+    "slug": "ASKIAGRAPHY_STUDIES",
+    "tech": "Photography · Albedo estimation",
+    "format": "Interactive sample gallery",
+    "category": "Photographic studies",
+    "categoryDescription": "Depth, surface color & image experiments",
+    "description": "Exploring estimated surface color with lighting and shadow reduced. Compare original photographs with saved Marigold V2 albedo outputs from my Depth Exploration project.",
+    "image": "media/photo-studies/albedo-autumn.webp",
+    "url": "photo-studies.html#askiagraphy",
+    "note": "Independent studies inspired by Karim Joseph Nassar’s Askiagraphy. Photographs and interface by Abhinash Tummala; albedo estimated with Marigold V2."
+  },
+  {
     "id": "merced-river",
     "title": "Merced River",
     "slug": "MERCED_RIVER",

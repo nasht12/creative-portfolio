@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#e7e3da">
+  <title>Photographic studies — Abhinash Tummala</title>
+  <meta name="description" content="Depth and albedo experiments from Abhinash Tummala’s photography, with original-to-result comparisons.">
+  <link rel="stylesheet" href="style.css?v=persistent-intro-1"><link rel="stylesheet" href="photo-studies.css">
+</head>
+<body class="content-page photo-studies">
+  <a class="skip-link" href="#studies">Skip to studies</a>
+  <header><a class="wordmark" href="index.html">← PORTFOLIO</a><nav><a href="about.html">About</a><a href="mailto:abhinash.t12@gmail.com">Email ↗</a></nav></header>
+  <main id="studies" class="studies-main">
+    <div class="study-introduction"><p class="eyebrow">PHOTOGRAPHY / COMPUTATIONAL STUDIES</p><h1>Another way<br>to see a photograph.</h1><p>Exploring what remains when a photograph is translated into depth, or its lighting is softened into estimated surface color.</p></div>
+    <div class="study-tabs" role="tablist" aria-label="Photographic experiment">
+      <button id="tab-vathography" role="tab" aria-controls="study-panel" aria-selected="true" tabindex="0" data-study="vathography">Vathography <span>01 / Depth</span></button>
+      <button id="tab-askiagraphy" role="tab" aria-controls="study-panel" aria-selected="false" tabindex="-1" data-study="askiagraphy">Askiagraphy <span>02 / Albedo</span></button>
+    </div>
+    <section id="study-panel" role="tabpanel" aria-labelledby="tab-vathography">
+      <div class="study-heading"><div><p class="eyebrow" id="study-kind"></p><h2 id="study-title"></h2></div><p id="study-description"></p></div>
+      <div class="comparison" style="--split:50%">
+        <img id="study-result" alt="" fetchpriority="high">
+        <img id="study-source" class="comparison-original" alt="">
+        <span class="comparison-tag original-tag">Original</span><span class="comparison-tag result-tag" id="result-tag">Depth study</span>
+        <span class="comparison-divider" aria-hidden="true"><span>↔</span></span>
+        <input id="comparison-range" type="range" min="0" max="100" value="50" aria-label="Original photograph and processed study comparison" aria-valuetext="50 percent original photograph">
+      </div>
+      <div class="image-caption"><div><strong id="sample-title"></strong><p id="sample-description"></p></div><button class="text-link" id="enlarge">View study full size ↗</button></div>
+      <p class="comparison-hint">Drag the divider, or use the arrow keys, to compare the original and the study.</p>
+      <div id="sample-list" class="sample-list" aria-label="Choose a sample photograph"></div>
+      <div class="process-note"><div><p class="eyebrow">HOW IT WORKS</p><p id="process-description"></p><span id="model-label"></span></div><div><p class="eyebrow">PROJECT</p><p>Selected outputs from my local Depth Exploration app. These comparisons use saved model results.</p><a class="text-link" href="https://github.com/nasht12/depth-exploration" target="_blank" rel="noopener">View project code ↗</a></div></div>
+    </section>
+    <footer class="studies-footer"><p>Independent studies inspired by <a href="https://vathography.com/" target="_blank" rel="noopener">Vathography</a> and <a href="https://askiagraphy.com/" target="_blank" rel="noopener">Askiagraphy</a>, practices by Karim Joseph Nassar.</p><p>Photography and interface: Abhinash Tummala. Depth and albedo are model estimates; edges, color, and small details can change.</p></footer>
+  </main>
+  <dialog id="study-lightbox"><button id="close-study" aria-label="Close full-size study">×</button><img id="full-study" alt=""></dialog>
+  <script type="module" src="photo-studies.js"></script>
+</body></html>
