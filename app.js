@@ -38,11 +38,12 @@ projects.forEach((p,i)=>{
  const mesh=new T.Mesh(new T.PlaneGeometry(cardWidth,cardHeight),material);
  mesh.position.set(Math.sin(i*step)*radius,i*rise,Math.cos(i*step)*radius);root.add(mesh);p.mesh=mesh;
 });
-let width=innerWidth,height=innerHeight,progress=0,current=0,frame=0,lastScroll=0;
+let width=innerWidth,height=innerHeight,progress=0,current=0,frame=0,lastScroll=0,lastFrameTime=0;
 const wrap=(value,length)=>((value%length)+length)%length;
 const point=new T.Vector3(),inverse=new T.Quaternion();freezeGallery=()=>{progress=current;};
-function render(){
- frame=0;current=reduced?progress:current+(progress-current)*.075;
+function render(now=performance.now()){
+ const elapsed=Math.min(50,Math.max(1,now-(lastFrameTime||now-16.67)));lastFrameTime=now;
+ frame=0;current=reduced?progress:current+(progress-current)*(1-Math.exp(-elapsed/260));
  const focus=current,compact=width<=1000,centerY=.35,activeIndex=wrap(Math.round(focus),projects.length);
  const intro=document.querySelector('.intro'),introAlpha=1;
  intro.style.opacity=introAlpha;intro.style.transform='none';
@@ -66,9 +67,9 @@ function render(){
  projects.forEach((p,i)=>{
   // Recycle each card only when it is far from the visible camera window.
   const logicalIndex=i+Math.round((focus-i)/projects.length)*projects.length;
-  const relativeIndex=logicalIndex-focus,score=Math.abs(relativeIndex),focusWeight=1-T.MathUtils.smoothstep(score,.4,.8),emphasis=.84+.4*focusWeight;
+  const relativeIndex=logicalIndex-focus,score=Math.abs(relativeIndex),focusWeight=Math.exp(-score*score*1.25),emphasis=.88+.32*focusWeight;
   p.mesh.scale.setScalar(emphasis);
-  p.mesh.position.set(Math.sin(relativeIndex*step)*sceneRadius,relativeIndex*rise,Math.cos(relativeIndex*step)*sceneRadius+1.05*focusWeight);
+  p.mesh.position.set(Math.sin(relativeIndex*step)*sceneRadius,relativeIndex*rise,Math.cos(relativeIndex*step)*sceneRadius+.7*focusWeight);
   p.mesh.updateMatrixWorld();
   p.mesh.quaternion.copy(inverse).multiply(camera.quaternion);
   const world=p.mesh.getWorldPosition(new T.Vector3()),depth=camera.position.z-world.z;
@@ -76,7 +77,7 @@ function render(){
   const x=view.left+(point.x*.5+.5)*view.width,y=view.top+(-point.y*.5+.5)*view.height;
   const scale=view.height/(2*Math.tan(T.MathUtils.degToRad(20))*depth),pxWidth=cardWidth*scale*emphasis,pxHeight=cardHeight*scale*emphasis;
   const front=world.z>-.5,visible=y+pxHeight*.5>view.top&&y-pxHeight*.5<view.top+view.height;
-  const edgeFade=Math.max(0,Math.min(1,(y-view.top)/Math.min(65,view.height*.2),(view.top+view.height-y)/Math.min(65,view.height*.2)));const cycleFade=Math.max(0,Math.min(1,(3.8-score)/.8));const opacity=(front?.18+.82*focusWeight:.06)*edgeFade*cycleFade;
+  const edgeFade=Math.max(0,Math.min(1,(y-view.top)/Math.min(65,view.height*.2),(view.top+view.height-y)/Math.min(65,view.height*.2)));const cycleFade=Math.max(0,Math.min(1,(3.8-score)/.8));const depthBlend=T.MathUtils.smoothstep(world.z,-sceneRadius*.65,sceneRadius*.65);const opacity=(.05+(.13+.82*focusWeight)*depthBlend)*edgeFade*cycleFade;
   p.mesh.visible=visible;p.mesh.material.opacity=opacity;
   p.button.style.cssText=`left:${x}px;top:${y}px;width:${pxWidth}px;height:${pxHeight}px;z-index:${Math.round((world.z+5)*100)};opacity:${opacity};visibility:${visible&&front?'visible':'hidden'};`;
   p.button.classList.toggle('is-focused',i===activeIndex);
@@ -88,7 +89,7 @@ function render(){
  renderer.setViewport(view.left,height-view.top-view.height,view.width,view.height);
  renderer.setScissor(view.left,height-view.top-view.height,view.width,view.height);renderer.setScissorTest(true);
  renderer.render(scene,camera);
- if(Math.abs(progress-current)>.0001&&!reduced)frame=requestAnimationFrame(render);
+ if(Math.abs(progress-current)>.0001&&!reduced){if(!frame)frame=requestAnimationFrame(render)}else lastFrameTime=0;
 }
 wake=()=>{if(!frame)frame=requestAnimationFrame(render)};
 function resize(){width=innerWidth;height=innerHeight;renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();wake()}
@@ -96,7 +97,7 @@ function recenter(){const middle=Math.round((document.documentElement.scrollHeig
 function scroll(){
  if($('project').open){lastScroll=scrollY;return;}
  const position=scrollY,delta=position-lastScroll;lastScroll=position;
- progress+=delta/Math.max(280,innerHeight*.5);
+ progress+=delta/Math.max(320,innerHeight*.65);
  const max=document.documentElement.scrollHeight-innerHeight;
  if(position<innerHeight||position>max-innerHeight)recenter();
  wake();

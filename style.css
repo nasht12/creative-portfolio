@@ -41,3 +41,6 @@ body:not(.content-page) .intro-copy{max-width:220px;margin:0;font-size:13px;line
 
 /* One clear focal card; neighbouring cards supply quieter depth cues. */
 .project-label.is-focused{border-color:#ffffffe6;box-shadow:0 20px 45px #292a2526}.project-label.is-focused span{background:#eeebe2ed;color:#292a25;box-shadow:0 3px 12px #292a2509}.project-label:not(.is-focused){box-shadow:none}@media(max-width:600px){.project-label.is-focused{box-shadow:0 12px 28px #292a2520}}
+
+/* Let the focal outline and shadow hand over gently as the spiral turns. */
+.project-label{transition:opacity .25s linear,border-color .35s ease,box-shadow .4s ease}.project-label span{transition:opacity .3s ease,background-color .3s ease}
