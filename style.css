@@ -38,3 +38,6 @@ body:not(.content-page) .intro-copy{max-width:220px;margin:0;font-size:13px;line
 
 /* Consistent landscape previews, including the index and non-WebGL fallback. */
 .index-row img{width:78px;height:52px;object-fit:cover;flex-shrink:0}.sample-choice img{aspect-ratio:3/2}.fallback .project-label{aspect-ratio:3/2;background-position:center}.project-label{width:195px;height:130px}@media(max-width:600px){.index-row img{width:69px;height:46px}.project-label span{max-width:190px}}
+
+/* One clear focal card; neighbouring cards supply quieter depth cues. */
+.project-label.is-focused{border-color:#ffffffe6;box-shadow:0 20px 45px #292a2526}.project-label.is-focused span{background:#eeebe2ed;color:#292a25;box-shadow:0 3px 12px #292a2509}.project-label:not(.is-focused){box-shadow:none}@media(max-width:600px){.project-label.is-focused{box-shadow:0 12px 28px #292a2520}}

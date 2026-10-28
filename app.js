@@ -22,7 +22,7 @@ const T=await import('three');
 const renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0xd7d3c8,0);$('stage').append(renderer.domElement);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(40,1,.1,80),root=new T.Group();scene.add(root);
-const step=.88,rise=1.15,radius=3.5,cardWidth=2.55,cardHeight=1.7;
+const step=1.02,rise=1.65,radius=3.8,cardWidth=2.55,cardHeight=1.7;
 const loader=new T.TextureLoader();
 projects.forEach((p,i)=>{
  const texture=loader.load(p.image,loaded=>{
@@ -34,7 +34,7 @@ projects.forEach((p,i)=>{
   else{loaded.repeat.y=imageAspect/cardAspect;loaded.offset.y=(1-loaded.repeat.y)/2;}
   wake();
  });texture.colorSpace=T.SRGBColorSpace;
- const material=new T.MeshBasicMaterial({map:texture,transparent:true,side:T.DoubleSide});
+ const material=new T.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:T.DoubleSide});
  const mesh=new T.Mesh(new T.PlaneGeometry(cardWidth,cardHeight),material);
  mesh.position.set(Math.sin(i*step)*radius,i*rise,Math.cos(i*step)*radius);root.add(mesh);p.mesh=mesh;
 });
@@ -43,7 +43,7 @@ const wrap=(value,length)=>((value%length)+length)%length;
 const point=new T.Vector3(),inverse=new T.Quaternion();freezeGallery=()=>{progress=current;};
 function render(){
  frame=0;current=reduced?progress:current+(progress-current)*.075;
- const focus=current,compact=width<=1000,centerY=.35;
+ const focus=current,compact=width<=1000,centerY=.35,activeIndex=wrap(Math.round(focus),projects.length);
  const intro=document.querySelector('.intro'),introAlpha=1;
  intro.style.opacity=introAlpha;intro.style.transform='none';
  const headerRect=document.querySelector('header').getBoundingClientRect();
@@ -62,24 +62,25 @@ function render(){
  camera.position.set(0,centerY,distance);camera.lookAt(0,centerY,0);camera.updateMatrixWorld();root.updateMatrixWorld(true);
  $('labels').style.clipPath='inset('+view.top+'px '+Math.max(0,width-view.left-view.width)+'px '+Math.max(0,height-view.top-view.height)+'px '+view.left+'px)';
  inverse.copy(root.quaternion).invert();
- let closest=0,best=Infinity;
+ const closest=activeIndex;
  projects.forEach((p,i)=>{
   // Recycle each card only when it is far from the visible camera window.
   const logicalIndex=i+Math.round((focus-i)/projects.length)*projects.length;
-  const relativeIndex=logicalIndex-focus;
-  p.mesh.position.set(Math.sin(relativeIndex*step)*sceneRadius,relativeIndex*rise,Math.cos(relativeIndex*step)*sceneRadius);
+  const relativeIndex=logicalIndex-focus,score=Math.abs(relativeIndex),focusWeight=1-T.MathUtils.smoothstep(score,.4,.8),emphasis=.84+.4*focusWeight;
+  p.mesh.scale.setScalar(emphasis);
+  p.mesh.position.set(Math.sin(relativeIndex*step)*sceneRadius,relativeIndex*rise,Math.cos(relativeIndex*step)*sceneRadius+1.05*focusWeight);
   p.mesh.updateMatrixWorld();
   p.mesh.quaternion.copy(inverse).multiply(camera.quaternion);
   const world=p.mesh.getWorldPosition(new T.Vector3()),depth=camera.position.z-world.z;
   point.copy(world).project(camera);
   const x=view.left+(point.x*.5+.5)*view.width,y=view.top+(-point.y*.5+.5)*view.height;
-  const scale=view.height/(2*Math.tan(T.MathUtils.degToRad(20))*depth),pxWidth=cardWidth*scale,pxHeight=cardHeight*scale;
-  const score=Math.abs(relativeIndex),front=world.z>-.5,visible=y+pxHeight*.5>view.top&&y-pxHeight*.5<view.top+view.height;
-  const edgeFade=Math.max(0,Math.min(1,(y-view.top)/Math.min(65,view.height*.2),(view.top+view.height-y)/Math.min(65,view.height*.2)));const cycleFade=Math.max(0,Math.min(1,(5.2-score)/.75));const opacity=(front?Math.max(.68,1-score*.06):.20)*edgeFade*cycleFade;
+  const scale=view.height/(2*Math.tan(T.MathUtils.degToRad(20))*depth),pxWidth=cardWidth*scale*emphasis,pxHeight=cardHeight*scale*emphasis;
+  const front=world.z>-.5,visible=y+pxHeight*.5>view.top&&y-pxHeight*.5<view.top+view.height;
+  const edgeFade=Math.max(0,Math.min(1,(y-view.top)/Math.min(65,view.height*.2),(view.top+view.height-y)/Math.min(65,view.height*.2)));const cycleFade=Math.max(0,Math.min(1,(3.8-score)/.8));const opacity=(front?.18+.82*focusWeight:.06)*edgeFade*cycleFade;
   p.mesh.visible=visible;p.mesh.material.opacity=opacity;
   p.button.style.cssText=`left:${x}px;top:${y}px;width:${pxWidth}px;height:${pxHeight}px;z-index:${Math.round((world.z+5)*100)};opacity:${opacity};visibility:${visible&&front?'visible':'hidden'};`;
-  p.button.classList.toggle('is-focused',score<.6);
-  if(score<best){best=score;closest=i}
+  p.button.classList.toggle('is-focused',i===activeIndex);
+
  });
  $('activeLabel').textContent=`${String(closest+1).padStart(2,'0')} / ${projects[closest].slug}`;updateCategory(closest);
  $('progress').style.width=wrap(focus,projects.length)/projects.length*100+'%';
