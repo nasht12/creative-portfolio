@@ -22,12 +22,20 @@ const T=await import('three');
 const renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0xd7d3c8,0);$('stage').append(renderer.domElement);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(40,1,.1,80),root=new T.Group();scene.add(root);
-const step=.88,rise=.95,radius=3.5,cardSize=1.7;
+const step=.88,rise=1.15,radius=3.5,cardWidth=2.55,cardHeight=1.7;
 const loader=new T.TextureLoader();
 projects.forEach((p,i)=>{
- const texture=loader.load(p.image,()=>wake());texture.colorSpace=T.SRGBColorSpace;
+ const texture=loader.load(p.image,loaded=>{
+  const image=loaded.image,imageAspect=image.width/image.height,cardAspect=cardWidth/cardHeight;
+  if(p.id==='washington-mapping'){
+   // Preserve the complete square map while giving its frame the same landscape shape.
+   const canvas=document.createElement('canvas');canvas.width=960;canvas.height=640;const ctx=canvas.getContext('2d');ctx.fillStyle='#031329';ctx.fillRect(0,0,960,640);ctx.drawImage(image,160,0,640,640);loaded.image=canvas;loaded.needsUpdate=true;
+  }else if(imageAspect>cardAspect){loaded.repeat.x=cardAspect/imageAspect;loaded.offset.x=(1-loaded.repeat.x)/2;}
+  else{loaded.repeat.y=imageAspect/cardAspect;loaded.offset.y=(1-loaded.repeat.y)/2;}
+  wake();
+ });texture.colorSpace=T.SRGBColorSpace;
  const material=new T.MeshBasicMaterial({map:texture,transparent:true,side:T.DoubleSide});
- const mesh=new T.Mesh(new T.PlaneGeometry(cardSize,cardSize),material);
+ const mesh=new T.Mesh(new T.PlaneGeometry(cardWidth,cardHeight),material);
  mesh.position.set(Math.sin(i*step)*radius,i*rise,Math.cos(i*step)*radius);root.add(mesh);p.mesh=mesh;
 });
 let width=innerWidth,height=innerHeight,progress=0,current=0,frame=0,lastScroll=0;
@@ -48,8 +56,8 @@ function render(){
  const bottom=compact?Math.min(categoryRect.top-20,footerRect.top-24):footerRect.top-26;
  const view={left,top,width:Math.max(80,right-left),height:Math.max(70,bottom-top)};
  camera.aspect=view.width/view.height;camera.updateProjectionMatrix();
- const sceneRadius=compact?2.3:radius;
- const distance=Math.max(sceneRadius+7,sceneRadius+(sceneRadius+cardSize*.7)/(Math.tan(T.MathUtils.degToRad(20))*camera.aspect));
+ const sceneRadius=compact?2.65:radius;
+ const distance=Math.max(sceneRadius+7,sceneRadius+(sceneRadius+cardWidth*.6)/(Math.tan(T.MathUtils.degToRad(20))*camera.aspect));
  root.rotation.y=0;root.position.x=0;
  camera.position.set(0,centerY,distance);camera.lookAt(0,centerY,0);camera.updateMatrixWorld();root.updateMatrixWorld(true);
  $('labels').style.clipPath='inset('+view.top+'px '+Math.max(0,width-view.left-view.width)+'px '+Math.max(0,height-view.top-view.height)+'px '+view.left+'px)';
@@ -65,11 +73,11 @@ function render(){
   const world=p.mesh.getWorldPosition(new T.Vector3()),depth=camera.position.z-world.z;
   point.copy(world).project(camera);
   const x=view.left+(point.x*.5+.5)*view.width,y=view.top+(-point.y*.5+.5)*view.height;
-  const px=cardSize*view.height/(2*Math.tan(T.MathUtils.degToRad(20))*depth);
-  const score=Math.abs(relativeIndex),front=world.z>-.5,visible=y+px*.5>view.top&&y-px*.5<view.top+view.height;
+  const scale=view.height/(2*Math.tan(T.MathUtils.degToRad(20))*depth),pxWidth=cardWidth*scale,pxHeight=cardHeight*scale;
+  const score=Math.abs(relativeIndex),front=world.z>-.5,visible=y+pxHeight*.5>view.top&&y-pxHeight*.5<view.top+view.height;
   const edgeFade=Math.max(0,Math.min(1,(y-view.top)/Math.min(65,view.height*.2),(view.top+view.height-y)/Math.min(65,view.height*.2)));const cycleFade=Math.max(0,Math.min(1,(5.2-score)/.75));const opacity=(front?Math.max(.68,1-score*.06):.20)*edgeFade*cycleFade;
   p.mesh.visible=visible;p.mesh.material.opacity=opacity;
-  p.button.style.cssText=`left:${x}px;top:${y}px;width:${px}px;height:${px}px;z-index:${Math.round((world.z+5)*100)};opacity:${opacity};visibility:${visible&&front?'visible':'hidden'};`;
+  p.button.style.cssText=`left:${x}px;top:${y}px;width:${pxWidth}px;height:${pxHeight}px;z-index:${Math.round((world.z+5)*100)};opacity:${opacity};visibility:${visible&&front?'visible':'hidden'};`;
   p.button.classList.toggle('is-focused',score<.6);
   if(score<best){best=score;closest=i}
  });
