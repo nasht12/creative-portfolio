@@ -4,7 +4,6 @@ const studies={
     {id:'depth-shoreline',title:'Shoreline / White depth band',description:'Figure, driftwood, and shoreline become a graphic arrangement of distances rather than photographic light.'},
     {id:'depth-lighthouse',title:'Lighthouse / Near-white',description:'A near-white depth gradient separates the lighthouse, building, and landscape through tone.'},
     {id:'depth-driftwood',title:'Driftwood / Layered shore',description:'Driftwood, beach, and distant water separate into a study of layered distance.'},
-    {id:'depth-ferry',title:'Ferry / Framed distance',description:'The ferry interior and the view through its windows become contrasting planes of depth.'},
     {id:'depth-mountain',title:'Mountain / Distant forms',description:'A distant mountain and the nearer headland resolve into quiet bands of depth.'}
   ]},
   askiagraphy:{kind:'02 / ALBEDO EXPLORATION',title:'Color, beyond the lighting.',description:'An estimate of surface color with lighting and shadow reduced. Familiar photographs become flatter, quieter color studies.',tag:'Albedo study',process:'Run a photograph through Marigold V2 albedo estimation. The model estimates surface color while reducing the influence of lighting and shadow. The result is an interpretation, rather than a perfect shadow-free reconstruction.',model:'Marigold V2 · Albedo estimation',samples:[
