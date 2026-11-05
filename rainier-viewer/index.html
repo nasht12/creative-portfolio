@@ -5,10 +5,10 @@
 html,body{margin:0;height:100%;background:#05070c;color:#d9d6cc;font:12px/1.6 Consolas,ui-monospace,monospace;overflow:hidden}
 canvas{display:block}#hud{position:fixed;left:18px;bottom:16px;max-width:420px;opacity:.88;pointer-events:none}
 #hud b{color:#fff;font-weight:600}
-</style>
+#style{position:fixed;top:12px;right:14px;z-index:2;font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff14;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer}#style:hover{background:#ffffff2a}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
-<a href="../lidar-studies.html#rainier" style="position:fixed;top:16px;left:18px;z-index:2;color:#d9d6cc;font:12px Consolas,monospace;text-decoration:none">&larr; LiDAR studies</a><div id="hud"><b>Mount Rainier, 2,799,776 points</b><br>Rainier Wali 2022 bare-earth LiDAR (WA DNR) &middot; sampled every 46 ft &middot; colored by elevation<br>
+<a href="../lidar-studies.html#rainier" style="position:fixed;top:16px;left:18px;z-index:2;color:#d9d6cc;font:12px Consolas,monospace;text-decoration:none">&larr; LiDAR studies</a><button id="style">Point cloud</button><div id="hud"><b>Mount Rainier, 2,799,776 points</b><br>Rainier Wali 2022 bare-earth LiDAR (WA DNR) &middot; sampled every 46 ft &middot; colored by elevation<br>
 drag to orbit &middot; right-drag to pan &middot; scroll to zoom<br><span id="status">loading&hellip;</span></div>
 <script type="module">
 import * as THREE from 'three';
@@ -35,16 +35,24 @@ geo.setAttribute('acol', new THREE.BufferAttribute(col, 3, true));
 geo.setAttribute('asize', new THREE.BufferAttribute(size, 1));
 const bg = new THREE.Color(0x05070c);
 const mat = new THREE.ShaderMaterial({
-  uniforms: {scale: {value: 1}, minPx: {value: 1.5}, fogColor: {value: bg}, fogNear: {value: 60000}, fogFar: {value: 160000}},
+  uniforms: {scale: {value: 1}, minPx: {value: 1.5}, mode: {value: 0}, sizeMul: {value: 0.34}, zLo: {value: 2818}, zHi: {value: 14400}, fogColor: {value: bg}, fogNear: {value: 60000}, fogFar: {value: 160000}},
   vertexShader: `
     attribute vec3 acol; attribute float asize;
-    uniform float scale, minPx; varying vec3 vCol; varying float vDepth;
+    uniform float scale, minPx, mode, sizeMul, zLo, zHi;
+vec3 ramp(float t) {
+      vec3 c[6] = vec3[6](vec3(0.106,0.290,0.420), vec3(0.165,0.561,0.604), vec3(0.486,0.788,0.416),
+                          vec3(0.949,0.812,0.357), vec3(0.953,0.604,0.298), vec3(1.0,0.416,0.302));
+      t = clamp(t, 0.0, 1.0) * 5.0; int i = int(min(floor(t), 4.0));
+      return mix(c[i], c[i + 1], t - float(i));
+    } varying vec3 vCol; varying float vDepth;
     void main() {
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_Position = projectionMatrix * mv;
       vDepth = -mv.z;
-      gl_PointSize = clamp(asize * scale / vDepth, minPx, 64.0);
-      vCol = acol;
+      gl_PointSize = clamp(asize * mix(1.0, sizeMul, mode) * scale / vDepth, mix(minPx, 1.0, mode), 64.0);
+      float lum = dot(acol, vec3(0.299, 0.587, 0.114));
+      vec3 pc = ramp((position.y - zLo) / (zHi - zLo)) * (0.55 + 0.65 * lum);
+      vCol = mix(acol, pc, mode);
     }`,
   fragmentShader: `
     uniform vec3 fogColor; uniform float fogNear, fogFar; varying vec3 vCol; varying float vDepth;
@@ -65,7 +73,7 @@ const camera = new THREE.PerspectiveCamera(50, 1, 40, 300000);
 // a view can be passed in the URL: #cam=x,y,z&target=x,y,z (also stops the auto-rotate)
 const hp = new URLSearchParams(location.hash.slice(1));
 const vec = k => hp.get(k) && hp.get(k).split(',').map(Number);
-if (hp.has('clean')) document.querySelectorAll('#hud, body > a').forEach(e => e.style.display = 'none');  // for stills
+if (hp.has('clean')) document.querySelectorAll('#hud, body > a, #style').forEach(e => e.style.display = 'none');  // for stills
 camera.position.set(...(vec('cam') || meta.camera));
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(...(vec('target') || meta.target));
@@ -85,5 +93,15 @@ addEventListener('resize', resize);
 resize();
 status.textContent = 'ready';
 window.__viewer = {n, ready: true, camera, controls, renderer, scene, mat};
+const styleBtn = document.getElementById('style');
+const setStyle = pts => {
+  mat.uniforms.mode.value = pts ? 1 : 0;
+  styleBtn.textContent = pts ? 'Surface' : 'Point cloud';
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (pts) h.set('style', 'points'); else h.delete('style');
+  history.replaceState(null, '', h.toString() ? '#' + h.toString().replace(/=(&|$)/g, '$1') : location.pathname + location.search);
+};
+styleBtn.addEventListener('click', () => setStyle(!mat.uniforms.mode.value));
+if (hp.get('style') === 'points') setStyle(true);
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 </script></body></html>
