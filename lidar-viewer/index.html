@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seattle LiDAR Viewer</title>
+<style>
+html,body{margin:0;height:100%;background:#05070c;color:#d9d6cc;font:12px/1.6 Consolas,ui-monospace,monospace;overflow:hidden}
+canvas{display:block}#hud{position:fixed;left:18px;bottom:16px;max-width:420px;opacity:.88;pointer-events:none}
+#hud b{color:#fff;font-weight:600}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<a href="../lidar-studies.html#viewer" style="position:fixed;top:16px;left:18px;z-index:2;color:#d9d6cc;font:12px Consolas,monospace;text-decoration:none">&larr; LiDAR studies</a><div id="hud"><b>Seattle, 2,492,562 LiDAR points</b><br>King County West 2021 &middot; colored by height above ground &middot; water removed<br>
+drag to orbit &middot; right-drag to pan &middot; scroll to zoom<br><span id="status">loading&hellip;</span></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+THREE.ColorManagement.enabled = false;
+const status = document.getElementById('status');
+const meta = await (await fetch('points.json')).json();
+const buf = await (await fetch('points.bin')).arrayBuffer();
+const n = meta.count;
+const q = new Uint16Array(buf, 0, n * 3);
+const col = new Uint8Array(buf, n * 6, n * 3);
+const kind = new Uint8Array(buf, n * 9, n);
+const [sx, sy, sz] = meta.scale, [ox, oy, oz] = meta.offset;
+const pos = new Float32Array(n * 3), size = new Float32Array(n);
+for (let i = 0; i < n; i++) {  // data: x east, y north, z up -> three.js: y up, -z north
+  pos[3 * i] = q[3 * i] * sx + ox;
+  pos[3 * i + 1] = q[3 * i + 2] * sz + oz;
+  pos[3 * i + 2] = -(q[3 * i + 1] * sy + oy);
+  size[i] = meta.sizes[kind[i]];
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('acol', new THREE.BufferAttribute(col, 3, true));
+geo.setAttribute('asize', new THREE.BufferAttribute(size, 1));
+const bg = new THREE.Color(0x05070c);
+const mat = new THREE.ShaderMaterial({
+  uniforms: {scale: {value: 1}, minPx: {value: 1.2}, fogColor: {value: bg}, fogNear: {value: 16000}, fogFar: {value: 48000}},
+  vertexShader: `
+    attribute vec3 acol; attribute float asize;
+    uniform float scale, minPx; varying vec3 vCol; varying float vDepth;
+    void main() {
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mv;
+      vDepth = -mv.z;
+      gl_PointSize = clamp(asize * scale / vDepth, minPx, 48.0);
+      vCol = acol;
+    }`,
+  fragmentShader: `
+    uniform vec3 fogColor; uniform float fogNear, fogFar; varying vec3 vCol; varying float vDepth;
+    void main() {
+      vec2 p = gl_PointCoord - 0.5;
+      if (dot(p, p) > 0.25) discard;
+      gl_FragColor = vec4(mix(vCol, fogColor, smoothstep(fogNear, fogFar, vDepth)), 1.0);
+    }`,
+});
+const scene = new THREE.Scene();
+scene.background = bg;
+scene.add(new THREE.Points(geo, mat));
+const renderer = new THREE.WebGLRenderer({antialias: false});
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(50, 1, 10, 90000);
+camera.position.set(...meta.camera);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(...meta.target);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.3;
+controls.maxPolarAngle = Math.PI * 0.49;
+renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; });
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  // pixels per foot at distance 1: drawing-buffer height over the vertical view span
+  mat.uniforms.scale.value = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+}
+addEventListener('resize', resize);
+resize();
+status.textContent = 'ready';
+window.__viewer = {n, ready: true, camera, controls, renderer, scene, mat};
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script></body></html>
