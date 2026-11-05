@@ -14,6 +14,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <button role="tab" id="t-green-lake" aria-controls="green-lake">Green Lake</button>
 <button role="tab" id="t-ballard" aria-controls="ballard">Ballard</button>
 <button role="tab" id="t-city" aria-controls="city">Whole city</button>
+<button role="tab" id="t-rainier" aria-controls="rainier">Mount Rainier</button>
 </div>
 
 <section class="panel" id="viewer" role="tabpanel" aria-labelledby="t-viewer">
@@ -68,9 +69,20 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <figure class="study"><img src="media/lidar-studies/studies/scan-anatomy.webp" alt="Three maps: flight passes, time flown, and share of split laser pulses." width="1800" height="795" loading="lazy"><figcaption><strong>Scan anatomy</strong><span>How the survey was flown: 12 passes on April 13, 2021, and where pulses split.</span></figcaption></figure>
 </section>
 
+<section class="panel" id="rainier" role="tabpanel" aria-labelledby="t-rainier" hidden>
+<p class="panel-note">The whole mountain from a bare-earth survey: 38 tiles, 22 GB of 1.5 ft elevation.</p>
+<figure class="study"><a class="viewer-card" href="rainier-viewer/index.html"><img src="media/lidar-studies/rainier/viewer.webp" alt="Mount Rainier in 3D seen from the north, glaciers white above green valleys." width="1800" height="1125" loading="lazy"><span>Open the Rainier viewer ↗</span></a><figcaption><strong>Interactive</strong><span>2.8 million points sampled every 46 ft. About a 20 MB download.</span></figcaption></figure>
+<figure class="study"><div class="row"><img style="flex-grow:1.0616" src="media/lidar-studies/rainier/white-model.webp" alt="White relief model of Mount Rainier and its radiating glacier valleys." width="1500" height="1413" loading="lazy"><img style="flex-grow:.9173" src="media/lidar-studies/rainier/summit.webp" alt="Close-up of the summit dome and its craters." width="1376" height="1500" loading="lazy"></div><figcaption><strong>Model / summit</strong><span>The full cone, and the summit craters up close.</span></figcaption></figure>
+<figure class="study"><div class="row"><img style="flex-grow:1.0608" src="media/lidar-studies/rainier/classic.webp" alt="Rainier shaded green to tan to white by elevation." width="1500" height="1414" loading="lazy"><img style="flex-grow:1.0608" src="media/lidar-studies/rainier/dusk.webp" alt="Rainier in dusk purples with the summit lit orange." width="1500" height="1414" loading="lazy"></div><figcaption><strong>Classic / dusk</strong><span>Colored by elevation, and lit like late evening.</span></figcaption></figure>
+<figure class="study"><div class="row"><img style="flex-grow:.75" src="media/lidar-studies/rainier/ridgelines.webp" alt="Mount Rainier as stacked white ridgelines on black." width="1050" height="1400" loading="lazy"><img style="flex-grow:1.0616" src="media/lidar-studies/rainier/stipple.webp" alt="Rainier drawn as a field of ink dots." width="1500" height="1413" loading="lazy"></div><figcaption><strong>Ridgelines / stipple</strong><span>Stacked height profiles, and 260,000 dots for a pen plotter.</span></figcaption></figure>
+<figure class="study"><img src="media/lidar-studies/rainier/sun-hours.webp" alt="Two maps of Rainier colored by hours of direct sun on the winter and summer solstices." width="1800" height="895" loading="lazy"><figcaption><strong>Sun hours</strong><span>Direct sun on the solstices. North walls stay dark all December.</span></figcaption></figure>
+<figure class="study"><div class="row"><img style="flex-grow:1" src="media/lidar-studies/rainier/viewshed-fremont.webp" alt="Map lit where the Mount Fremont Lookout can see." width="1400" height="1396" loading="lazy"><img style="flex-grow:1" src="media/lidar-studies/rainier/viewshed-paradise.webp" alt="Map lit where Paradise can see." width="1400" height="1396" loading="lazy"></div><figcaption><strong>Viewsheds</strong><span>What the Mount Fremont Lookout and Paradise can see, lit.</span></figcaption></figure>
+<figure class="study"><img src="media/lidar-studies/rainier/mowich.webp" alt="Perspective view of Rainier from the northwest above Mowich." width="1800" height="1013" loading="lazy"><figcaption><strong>From Mowich</strong><span>A perspective camera above the northwest foothills.</span></figcaption></figure>
+</section>
 
 
-<p class="source">Built with relief-renderer: Python relief and perspective renderers, and a GPU point-cloud renderer.<br>Data: King County West 2021 LiDAR, via the <a href="https://lidar.dnr.wa.gov/" target="_blank" rel="noopener">Washington Lidar Portal ↗</a>.<br><a href="index.html">← Back to the collection</a></p></main>
+
+<p class="source">Built with relief-renderer: Python relief and perspective renderers, and a GPU point-cloud renderer.<br>Data: King County West 2021 and Rainier Wali 2022 LiDAR, via the <a href="https://lidar.dnr.wa.gov/" target="_blank" rel="noopener">Washington Lidar Portal ↗</a>.<br><a href="index.html">← Back to the collection</a></p></main>
 <script>
 (() => {
   const tabs = [...document.querySelectorAll('[role="tab"]')];
