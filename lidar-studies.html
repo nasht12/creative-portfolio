@@ -6,6 +6,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 </style></head><body class="content-page"><a class="skip-link" href="#content">Skip to content</a><header><a class="wordmark" href="index.html">ABHINASH TUMMALA</a><nav aria-label="Main navigation"><a href="index.html">Work</a><a href="about.html">About</a></nav></header><main class="lidar-main" id="content"><p class="eyebrow">MAP-BASED APPLICATIONS / VISUAL STUDIES</p><h1>Seattle, in layers.</h1><p class="lead">Seattle rebuilt from aircraft laser scans: 1.1 billion LiDAR points and a citywide elevation surface, rendered with custom Python and GPU tools.</p>
 
 <div class="tabs" role="tablist" aria-label="Study groups">
+<button role="tab" id="t-viewer" aria-controls="viewer">3D viewer</button>
 <button role="tab" id="t-overview" aria-controls="overview">Overview</button>
 <button role="tab" id="t-downtown" aria-controls="downtown">Downtown &amp; port</button>
 <button role="tab" id="t-seattle-center" aria-controls="seattle-center">Seattle Center</button>
@@ -13,11 +14,15 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <button role="tab" id="t-green-lake" aria-controls="green-lake">Green Lake</button>
 <button role="tab" id="t-ballard" aria-controls="ballard">Ballard</button>
 <button role="tab" id="t-city" aria-controls="city">Whole city</button>
-<button role="tab" id="t-viewer" aria-controls="viewer">3D viewer</button>
 </div>
 
-<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
-<figure class="study"><img src="media/lidar-studies/point-cloud.webp" alt="Seattle towers rendered as a dense point cloud, colored from blue at ground level to orange at the tallest rooftops." fetchpriority="high"><figcaption><strong>Point-cloud city</strong><span>A flythrough frame. Every dot is one laser return, colored by height.</span></figcaption></figure>
+<section class="panel" id="viewer" role="tabpanel" aria-labelledby="t-viewer">
+<p class="panel-note">2.5 million points, water removed, with the point budget weighted toward towers.</p>
+<figure class="study"><a class="viewer-card" href="lidar-viewer/index.html"><img src="media/lidar-studies/studies/viewer.webp" alt="Point-cloud view from above the stadiums, looking north over the glowing downtown towers to Lake Union and north Seattle." width="1800" height="1125" fetchpriority="high"><span>Open the 3D viewer ↗</span></a><figcaption><strong>Interactive</strong><span>Drag to orbit, scroll to zoom. About a 25 MB download.</span></figcaption></figure>
+</section>
+
+<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview" hidden>
+<figure class="study"><img src="media/lidar-studies/point-cloud.webp" alt="Seattle towers rendered as a dense point cloud, colored from blue at ground level to orange at the tallest rooftops." loading="lazy"><figcaption><strong>Point-cloud city</strong><span>A flythrough frame. Every dot is one laser return, colored by height.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/city-model.webp" alt="Angled white relief model of downtown Seattle with blue waterfront." loading="lazy"><figcaption><strong>City as a model</strong><span>The elevation surface tilted and lit like an architect's model.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/shaded-relief.webp" alt="Overhead shaded-relief view of downtown Seattle with warm directional lighting." loading="lazy"><figcaption><strong>Light on relief</strong><span>Top-down elevation under directional light.</span></figcaption></figure>
 </section>
@@ -63,10 +68,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <figure class="study"><img src="media/lidar-studies/studies/scan-anatomy.webp" alt="Three maps: flight passes, time flown, and share of split laser pulses." width="1800" height="795" loading="lazy"><figcaption><strong>Scan anatomy</strong><span>How the survey was flown: 12 passes on April 13, 2021, and where pulses split.</span></figcaption></figure>
 </section>
 
-<section class="panel" id="viewer" role="tabpanel" aria-labelledby="t-viewer" hidden>
-<p class="panel-note">2.5 million points, water removed, with the point budget weighted toward towers.</p>
-<figure class="study"><a class="viewer-card" href="lidar-viewer/index.html"><img src="media/lidar-studies/studies/viewer.webp" alt="Point-cloud view from above the stadiums, looking north over the glowing downtown towers to Lake Union and north Seattle." width="1800" height="1125" loading="lazy"><span>Open the 3D viewer ↗</span></a><figcaption><strong>Interactive</strong><span>Drag to orbit, scroll to zoom. About a 25 MB download.</span></figcaption></figure>
-</section>
+
 
 <p class="source">Built with relief-renderer: Python relief and perspective renderers, and a GPU point-cloud renderer.<br>Data: King County West 2021 LiDAR, via the <a href="https://lidar.dnr.wa.gov/" target="_blank" rel="noopener">Washington Lidar Portal ↗</a>.<br><a href="index.html">← Back to the collection</a></p></main>
 <script>
@@ -85,7 +87,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
       }
     });
   };
-  const fromHash = () => tabs.some(t => t.getAttribute('aria-controls') === location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+  const fromHash = () => tabs.some(t => t.getAttribute('aria-controls') === location.hash.slice(1)) ? location.hash.slice(1) : 'viewer';
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => { history.replaceState(null, '', '#' + t.getAttribute('aria-controls')); show(t.getAttribute('aria-controls')); });
     t.addEventListener('keydown', e => {
