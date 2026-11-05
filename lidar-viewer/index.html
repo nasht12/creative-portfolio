@@ -62,11 +62,15 @@ renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 const camera = new THREE.PerspectiveCamera(50, 1, 10, 90000);
-camera.position.set(...meta.camera);
+// a view can be passed in the URL: #cam=x,y,z&target=x,y,z (also stops the auto-rotate)
+const hp = new URLSearchParams(location.hash.slice(1));
+const vec = k => hp.get(k) && hp.get(k).split(',').map(Number);
+if (hp.has('clean')) document.querySelectorAll('#hud, body > a').forEach(e => e.style.display = 'none');  // for stills
+camera.position.set(...(vec('cam') || meta.camera));
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(...meta.target);
+controls.target.set(...(vec('target') || meta.target));
 controls.enableDamping = true;
-controls.autoRotate = true;
+controls.autoRotate = !vec('cam');
 controls.autoRotateSpeed = 0.3;
 controls.maxPolarAngle = Math.PI * 0.49;
 renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; });
