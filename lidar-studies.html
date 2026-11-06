@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiDAR / Washington studies — Abhinash Tummala</title><meta name="description" content="Point-cloud and shaded-relief studies of Seattle and Mount Rainier from LiDAR data."><link rel="stylesheet" href="style.css"><style>
 body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;padding:145px 5vw 80px}.lidar-main h1{font-size:clamp(36px,6vw,80px);letter-spacing:-.055em;font-weight:400;margin:16px 0 20px}.lead{max-width:620px;line-height:1.65;margin-bottom:34px}.study{margin:0 0 48px}.study img{display:block;width:100%;height:auto;border-radius:3px}.study figcaption{display:flex;gap:18px;line-height:1.6;padding-top:12px;font-size:14px}.study figcaption strong{font-weight:500;white-space:nowrap}.study figcaption span{color:#55534d}.source{border-top:1px solid #aaa69b;padding-top:24px;font-size:13px;line-height:1.8;margin-top:30px}.source a{color:inherit}.row{display:flex;gap:12px;align-items:flex-start}.row img{flex-basis:0;min-width:0}.study.narrow{max-width:900px;margin-left:auto;margin-right:auto}
-.tabs{position:sticky;top:72px;z-index:4;display:flex;flex-wrap:wrap;gap:6px;padding:12px 0;margin-bottom:34px;background:#e7e3daf2;border-bottom:1px solid #aaa69b80}.tabs button{font:11px 'DM Mono',monospace;letter-spacing:.04em;padding:8px 13px;border:1px solid #292a2530;border-radius:20px;background:transparent;color:#292a25}.tabs button:hover{background:#ffffff66}.tabs button[aria-selected="true"]{background:#292a25;color:#f2f0e9;border-color:#292a25}.panel[hidden]{display:none}.panel-note{font-size:14px;color:#55534d;margin:-14px 0 30px;max-width:620px;line-height:1.6}.viewer-card{display:block;position:relative}.viewer-card span{position:absolute;left:18px;bottom:18px;background:#292a25;color:#f2f0e9;font:11px 'DM Mono',monospace;padding:11px 16px;border-radius:20px}
-@media(max-width:600px){.lidar-main{padding-top:115px}.study figcaption{display:block}.study figcaption span{display:block;margin-top:4px}.study{margin-bottom:34px}header nav{gap:15px}.row{flex-direction:column}.row img{flex:none!important;width:100%}.tabs{top:56px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-5vw;margin-right:-5vw;padding-left:5vw;padding-right:5vw}.tabs button{flex:none}}
+.tabbar{position:sticky;top:72px;z-index:4;padding:12px 0;margin-bottom:34px;background:#e7e3daf2;border-bottom:1px solid #aaa69b80}.tabs{display:flex;flex-wrap:wrap;gap:6px}.tabs.sub{margin-top:9px;gap:2px}.tabs.sub[hidden]{display:none}.tabs.sub button{border-color:transparent;padding:6px 11px;color:#55534d}.tabs.sub button[aria-selected="true"]{background:#292a2514;color:#292a25;border-color:#292a2540}.tabs button{font:11px 'DM Mono',monospace;letter-spacing:.04em;padding:8px 13px;border:1px solid #292a2530;border-radius:20px;background:transparent;color:#292a25}.tabs button:hover{background:#ffffff66}.tabs button[aria-selected="true"]{background:#292a25;color:#f2f0e9;border-color:#292a25}.panel[hidden]{display:none}.panel-note{font-size:14px;color:#55534d;margin:-14px 0 30px;max-width:620px;line-height:1.6}.viewer-card{display:block;position:relative}.viewer-card span{position:absolute;left:18px;bottom:18px;background:#292a25;color:#f2f0e9;font:11px 'DM Mono',monospace;padding:11px 16px;border-radius:20px}
+@media(max-width:600px){.lidar-main{padding-top:115px}.study figcaption{display:block}.study figcaption span{display:block;margin-top:4px}.study{margin-bottom:34px}header nav{gap:15px}.row{flex-direction:column}.row img{flex:none!important;width:100%}.tabbar{top:56px;margin-left:-5vw;margin-right:-5vw}.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 5vw}.tabs button{flex:none}}
 
 .study img{cursor:zoom-in}.viewer-card img{cursor:pointer}
 .lb{position:fixed;inset:0;z-index:50;background:#0b0b0af2;display:flex;flex-direction:column;opacity:0;transition:opacity .2s;touch-action:none}
@@ -16,24 +16,24 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 @media(max-width:600px){.lb-stage{padding:56px 0 6px}.lb-prev,.lb-next{display:none!important}.lb-cap{padding:8px 18px 20px}.lb-cap span{display:block;margin:2px 0 0}}
 </style></head><body class="content-page"><a class="skip-link" href="#content">Skip to content</a><header><a class="wordmark" href="index.html">ABHINASH TUMMALA</a><nav aria-label="Main navigation"><a href="index.html">Work</a><a href="about.html">About</a></nav></header><main class="lidar-main" id="content"><p class="eyebrow">MAP-BASED APPLICATIONS / VISUAL STUDIES</p><h1>Washington, in layers.</h1><p class="lead">Seattle and Mount Rainier rebuilt from aircraft laser scans: 1.1 billion city LiDAR points and elevation surfaces, rendered with custom Python and GPU tools.</p>
 
-<div class="tabs" role="tablist" aria-label="Study groups">
-<button role="tab" id="t-viewer" aria-controls="viewer">3D viewer</button>
-<button role="tab" id="t-overview" aria-controls="overview">Overview</button>
+<div class="tabbar">
+<div class="tabs" role="tablist" aria-label="Areas">
+<button role="tab" id="t-seattle" aria-controls="seattle">Seattle</button>
+<button role="tab" id="t-rainier" aria-controls="rainier">Mount Rainier</button>
+</div>
+<div class="tabs sub" id="seattle-sub" role="tablist" aria-label="Seattle neighborhoods">
 <button role="tab" id="t-downtown" aria-controls="downtown">Downtown &amp; port</button>
 <button role="tab" id="t-seattle-center" aria-controls="seattle-center">Seattle Center</button>
 <button role="tab" id="t-lake-union" aria-controls="lake-union">Lake Union &amp; Montlake</button>
 <button role="tab" id="t-green-lake" aria-controls="green-lake">Green Lake</button>
 <button role="tab" id="t-ballard" aria-controls="ballard">Ballard</button>
 <button role="tab" id="t-city" aria-controls="city">Whole city</button>
-<button role="tab" id="t-rainier" aria-controls="rainier">Mount Rainier</button>
+</div>
 </div>
 
-<section class="panel" id="viewer" role="tabpanel" aria-labelledby="t-viewer">
+<section class="panel" id="seattle" role="tabpanel" aria-labelledby="t-seattle">
 <p class="panel-note">2.5 million points, water removed, with the point budget weighted toward towers.</p>
 <figure class="study"><a class="viewer-card" href="lidar-viewer/index.html"><img src="media/lidar-studies/studies/viewer.webp" alt="Point-cloud view from above the stadiums, looking north over the glowing downtown towers to Lake Union and north Seattle." width="1800" height="1125" fetchpriority="high"><span>Open the 3D viewer ↗</span></a><figcaption><strong>Interactive</strong><span>Drag to orbit, scroll to zoom. About a 25 MB download.</span></figcaption></figure>
-</section>
-
-<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview" hidden>
 <figure class="study"><img src="media/lidar-studies/point-cloud.webp" alt="Seattle towers rendered as a dense point cloud, colored from blue at ground level to orange at the tallest rooftops." loading="lazy"><figcaption><strong>Point-cloud city</strong><span>A flythrough frame. Every dot is one laser return, colored by height.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/city-model.webp" alt="Angled white relief model of downtown Seattle with blue waterfront." loading="lazy"><figcaption><strong>City as a model</strong><span>The elevation surface tilted and lit like an architect's model.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/shaded-relief.webp" alt="Overhead shaded-relief view of downtown Seattle with warm directional lighting." loading="lazy"><figcaption><strong>Light on relief</strong><span>Top-down elevation under directional light.</span></figcaption></figure>
@@ -96,29 +96,38 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 
 <p class="source">Built with relief-renderer: Python relief and perspective renderers, and a GPU point-cloud renderer.<br>Data: King County West 2021 and Rainier Wali 2022 LiDAR, via the <a href="https://lidar.dnr.wa.gov/" target="_blank" rel="noopener">Washington Lidar Portal ↗</a>.<br><a href="index.html">← Back to the collection</a></p></main>
 <script>
-(() => {
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
-  const show = id => {
-    tabs.forEach(t => {
-      const on = t.getAttribute('aria-controls') === id;
-      t.setAttribute('aria-selected', on);
-      t.tabIndex = on ? 0 : -1;
-      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
-      if (on) {  // keep the selected tab visible in the sideways-scrolling bar on phones
-        const bar = t.parentElement;
-        if (t.offsetLeft + t.offsetWidth > bar.scrollLeft + bar.clientWidth || t.offsetLeft < bar.scrollLeft)
-          bar.scrollLeft = t.offsetLeft - 24;
-      }
-    });
+(() => {  // two levels: an area (Seattle, Mount Rainier), and inside Seattle a neighborhood
+  const top = [...document.querySelectorAll('.tabs:not(.sub) [role="tab"]')];
+  const sub = [...document.querySelectorAll('.tabs.sub [role="tab"]')];
+  const subBar = document.getElementById('seattle-sub'), bar = document.querySelector('.tabbar');
+  const ids = [...document.querySelectorAll('.panel')].map(p => p.id);
+  const areaOf = id => id === 'rainier' ? 'rainier' : 'seattle';
+  const legacy = {viewer: 'seattle', overview: 'seattle'};
+  const reveal = t => {  // keep the selected tab visible in the sideways-scrolling bar on phones
+    const r = t.parentElement;
+    if (t.offsetLeft + t.offsetWidth > r.scrollLeft + r.clientWidth || t.offsetLeft < r.scrollLeft) r.scrollLeft = t.offsetLeft - 24;
   };
-  const fromHash = () => tabs.some(t => t.getAttribute('aria-controls') === location.hash.slice(1)) ? location.hash.slice(1) : 'viewer';
-  tabs.forEach((t, i) => {
-    t.addEventListener('click', () => { history.replaceState(null, '', '#' + t.getAttribute('aria-controls')); show(t.getAttribute('aria-controls')); });
+  const show = id => {
+    ids.forEach(p => document.getElementById(p).hidden = p !== id);
+    const area = areaOf(id);
+    top.forEach(t => { const on = t.getAttribute('aria-controls') === area; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; if (on) reveal(t); });
+    subBar.hidden = area !== 'seattle';
+    sub.forEach((t, k) => { const on = t.getAttribute('aria-controls') === id; t.setAttribute('aria-selected', on); t.tabIndex = on || (id === 'seattle' && !k) ? 0 : -1; if (on) reveal(t); });
+  };
+  const fromHash = () => { const h = location.hash.slice(1); return legacy[h] || (ids.includes(h) ? h : 'seattle'); };
+  const pick = id => {
+    history.replaceState(null, '', '#' + id); show(id);
+    const y = bar.parentElement.offsetTop + bar.offsetTop - parseFloat(getComputedStyle(bar).top);  // back to the top of the studies
+    if (scrollY > y) scrollTo({top: y});
+  };
+  [top, sub].forEach(group => group.forEach((t, i) => {
+    // a second click on the open neighborhood goes back to the Seattle overview
+    t.addEventListener('click', () => pick(group === sub && t.getAttribute('aria-selected') === 'true' ? 'seattle' : t.getAttribute('aria-controls')));
     t.addEventListener('keydown', e => {
       const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-      if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); n.click(); }
+      if (d) { const n = group[(i + d + group.length) % group.length]; n.focus(); pick(n.getAttribute('aria-controls')); }
     });
-  });
+  }));
   addEventListener('hashchange', () => show(fromHash()));
   show(fromHash());
 })();
