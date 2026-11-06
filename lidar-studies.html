@@ -22,6 +22,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <button role="tab" id="t-rainier" aria-controls="rainier">Mount Rainier</button>
 </div>
 <div class="tabs sub" id="seattle-sub" role="tablist" aria-label="Seattle neighborhoods">
+<button role="tab" id="t-landmarks" aria-controls="landmarks">Landmarks</button>
 <button role="tab" id="t-downtown" aria-controls="downtown">Downtown &amp; port</button>
 <button role="tab" id="t-seattle-center" aria-controls="seattle-center">Seattle Center</button>
 <button role="tab" id="t-lake-union" aria-controls="lake-union">Lake Union &amp; Montlake</button>
@@ -37,6 +38,14 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <figure class="study"><img src="media/lidar-studies/point-cloud.webp" alt="Seattle towers rendered as a dense point cloud, colored from blue at ground level to orange at the tallest rooftops." loading="lazy"><figcaption><strong>Point-cloud city</strong><span>A flythrough frame. Every dot is one laser return, colored by height.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/city-model.webp" alt="Angled white relief model of downtown Seattle with blue waterfront." loading="lazy"><figcaption><strong>City as a model</strong><span>The elevation surface tilted and lit like an architect's model.</span></figcaption></figure>
 <figure class="study"><img src="media/lidar-studies/shaded-relief.webp" alt="Overhead shaded-relief view of downtown Seattle with warm directional lighting." loading="lazy"><figcaption><strong>Light on relief</strong><span>Top-down elevation under directional light.</span></figcaption></figure>
+</section>
+
+<section class="panel" id="landmarks" role="tabpanel" aria-labelledby="t-landmarks" hidden>
+<p class="panel-note">Single buildings lifted out of the city's point cloud, every neighbour removed.</p>
+<figure class="study"><img src="media/lidar-studies/landmarks/smith-tower-glow.webp" alt="Smith Tower alone in points from three angles, blue at the street to orange at the pyramid cap." width="1800" height="897" loading="lazy"><figcaption><strong>Smith Tower</strong><span>38,000 points from three sides, colored by height.</span></figcaption></figure>
+<figure class="study"><img src="media/lidar-studies/landmarks/smith-tower-model.webp" alt="Smith Tower as pale grey points on paper, from three angles." width="1800" height="897" loading="lazy"><figcaption><strong>Smith Tower, model</strong><span>The same points as a white model. Walls show as scan lines.</span></figcaption></figure>
+<figure class="study"><img src="media/lidar-studies/landmarks/space-needle-glow.webp" alt="The Space Needle alone in points from three angles, lattice legs rising to an orange saucer." width="1800" height="896" loading="lazy"><figcaption><strong>Space Needle</strong><span>The saucer hid the upper legs from the plane; those points are filled in.</span></figcaption></figure>
+<figure class="study"><img src="media/lidar-studies/landmarks/space-needle-model.webp" alt="The Space Needle as pale grey points on paper, from three angles." width="1800" height="896" loading="lazy"><figcaption><strong>Space Needle, model</strong><span>The same points as a white model.</span></figcaption></figure>
 </section>
 
 <section class="panel" id="downtown" role="tabpanel" aria-labelledby="t-downtown" hidden>
