@@ -15,8 +15,8 @@
 <label>Points</label><div class="row"><button data-keep="1">All</button><button data-keep="0.5">Half</button><button data-keep="0.25">Quarter</button></div>
 <label>Effects</label><div class="row"><button id="glowBtn">Glow</button><button id="spin">Spin</button></div>
 </div>
-<div id="status" role="status">Loading Green Lake · 5.7 MB</div>
-<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p>King County West 2021 LiDAR · Height, sun and frost colors from the scan</p></div><div class="buttons"><button id="ptsBtn" aria-expanded="false">Points</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
+<div id="status" role="status">Loading Green Lake · 5.8 MB</div>
+<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p id="breatheNote" hidden>Canopy expands and returns · Ground stays still</p><p>King County West 2021 LiDAR · Height, sun and frost colors from the scan</p></div><div class="buttons"><button id="motion" aria-pressed="false">Alive</button><button id="ptsBtn" aria-expanded="false">Points</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
 <script type="module">
 const status=document.getElementById('status');
 try {
@@ -29,11 +29,12 @@ for(let i=0,s=7;i<n;i++){for(let k=0;k<3;k++)positions[i*3+k]=packed[i*3+k]/6553
 document.getElementById('sub').textContent=`Seattle · ${n.toLocaleString()} laser returns · ${meta.trees.toLocaleString()} in the trees`;
 const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('hgt',new THREE.BufferAttribute(hb,1,true));geometry.setAttribute('inten',new THREE.BufferAttribute(ib,1,true));geometry.setAttribute('flags',new THREE.BufferAttribute(flags,1));geometry.setAttribute('rnd',new THREE.BufferAttribute(rnd,1));geometry.computeBoundingSphere();
 const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0x050810);renderer.domElement.setAttribute('aria-label','Interactive 3D Green Lake canopy. Drag to rotate and pinch to zoom.');renderer.domElement.setAttribute('role','img');document.body.prepend(renderer.domElement);document.getElementById('poster').hidden=true;
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=40;controls.maxDistance=meta.span[0]*3;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;controls.autoRotateSpeed=.6;
-const U={psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=meta.view.dist*.02;controls.maxDistance=meta.span[0]*3;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;controls.autoRotateSpeed=.6;
+const U={time:{value:0},breathe:{value:1},unit:{value:meta.units==='ft'?3.28:1},psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
 // Height: the luminous palette. Sun: warm where the sun reaches, blue in shadow. Frost: glacier ramp, canopy whitened.
 const vertexShader=`attribute float hgt,inten,flags,rnd; varying vec3 color; varying float hide;
-uniform float pixels,glow,look,city,sizeMul,shape,keep,psize;
+uniform float pixels,glow,look,city,sizeMul,shape,keep,psize,time,breathe,unit;
+float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
 vec3 palette(float t){vec3 a=vec3(.11,.17,.34),b=vec3(.22,.28,.65),c=vec3(.66,.20,.85),d=vec3(1.,.36,.48),e=vec3(1.,.72,.33),f=vec3(.55,1.,.90);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
 vec3 glacier(float t){vec3 a=vec3(.075,.165,.388),b=vec3(.122,.31,.627),c=vec3(.184,.525,.761),d=vec3(.325,.761,.788),e=vec3(.651,.937,.847),f=vec3(.949,1.,.976);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
 void main(){
@@ -44,7 +45,14 @@ void main(){
   else if(look<1.5){c=lit>.5?mix(vec3(1.,.70,.42),vec3(1.,.945,.84),hgt):vec3(.17,.25,.45)+.12*hgt;if(tree<.5)c*=.6;}
   else{c=glacier(pow(hgt,.65))*(.75+.45*inten);c=mix(c,vec3(.92,.98,1.),.55*canopy);if(tree<.5)c*=.45;c*=.45;}
   color=c;
-  vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;
+  // breathing (Arboretum): the canopy drifts out and back on a 12 s cycle, the ground stays put
+  vec3 p=position;
+  if(breathe>.5){float phase=mod(time,12.);float breath=phase<8.?pow(sin(phase*3.14159265359/8.),2.):0.;
+    float cano=smoothstep(.06,.25,hgt);vec3 seed=vec3(hash(position),hash(position.yzx+19.),hash(position.zxy+47.));
+    vec3 dir=normalize(vec3(seed.x-.5,.15+seed.y*.65,seed.z-.5));
+    vec3 drift=(dir*(3.+seed.y*10.)+vec3(sin(time*.65+seed.x*6.),0.,cos(time*.5+seed.z*6.))*1.5)*unit;
+    p+=drift*(breath*cano);color*=1.+breath*cano*.18;}
+  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
   float core=clamp(pixels*psize*sizeMul*inversesqrt(max(keep,.1))*(shape>.5&&shape<1.5?1.7:1.)/max(-mv.z,.1),1.,8.*sizeMul+2.);
   gl_PointSize=mix(core,core*3.,glow);}`;
 const fragmentShader=`varying vec3 color;varying float hide;uniform float glow,shape;void main(){if(hide>.5)discard;vec2 d=gl_PointCoord-.5;float r2=dot(d,d)*4.;float alpha=1.;
@@ -52,15 +60,17 @@ const fragmentShader=`varying vec3 color;varying float hide;uniform float glow,s
   gl_FragColor=vec4(color,alpha);}`;
 const core=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:0}},vertexShader,fragmentShader});scene.add(new THREE.Points(geometry,core));
 const halo=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:1}},vertexShader,fragmentShader,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const haloPts=new THREE.Points(geometry,halo);scene.add(haloPts);
-let frame=0;function draw(){frame=0;controls.update();renderer.render(scene,camera);if(controls.autoRotate)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
+const hp0=new URLSearchParams(location.hash.slice(1));
+let frame=0,lastTime=0,playing=(hp0.has('alive')?hp0.get('alive')==='1':!!meta.breathe)&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+function draw(now){frame=0;if(playing){if(lastTime)U.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;controls.update();renderer.render(scene,camera);if(controls.autoRotate||playing)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();U.pixels.value=renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));wake()}
-function reset(){const half=meta.span[0]/2,target=new THREE.Vector3(0,14,0),distance=Math.max(half*1.4,half*.55/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,14+distance*.8,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
+function reset(){const v=meta.view,target=new THREE.Vector3(0,v.targetY,0),distance=Math.max(v.dist,v.fit/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,v.targetY+distance*v.elev,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
 addEventListener('resize',resize);resize();reset();
 document.getElementById('reset').onclick=reset;document.getElementById('zoomIn').onclick=()=>{camera.position.sub(controls.target).multiplyScalar(.8).add(controls.target);controls.update();wake()};document.getElementById('zoomOut').onclick=()=>{camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target);controls.update();wake()};
 // ---- looks, city and point controls; every setting lives in the URL (#look=sun&size=1.4&shape=soft&points=0.5&glow=0&spin=1&city=0)
 const LOOKS=['height','sun','frost'],SHAPES=['dot','soft','square'];let glowOn=true;
 const hp=new URLSearchParams(location.hash.slice(1));
-const sync=()=>{const h=new URLSearchParams();if(U.look.value)h.set('look',LOOKS[U.look.value]);if(!U.city.value)h.set('city','0');if(U.sizeMul.value!==1)h.set('size',U.sizeMul.value);if(U.shape.value)h.set('shape',SHAPES[U.shape.value]);if(U.keep.value!==1)h.set('points',U.keep.value);if(!glowOn)h.set('glow','0');if(controls.autoRotate)h.set('spin','1');history.replaceState(null,'',h.toString()?'#'+h:location.pathname)};
+const sync=()=>{const h=new URLSearchParams();if(U.look.value)h.set('look',LOOKS[U.look.value]);if(!U.city.value)h.set('city','0');if(U.sizeMul.value!==1)h.set('size',U.sizeMul.value);if(U.shape.value)h.set('shape',SHAPES[U.shape.value]);if(U.keep.value!==1)h.set('points',U.keep.value);if(!glowOn)h.set('glow','0');if(controls.autoRotate)h.set('spin','1');if(typeof playing!=='undefined'&&playing!==!!meta.breathe)h.set('alive',playing?'1':'0');history.replaceState(null,'',h.toString()?'#'+h:location.pathname)};
 function blend(){const frost=U.look.value===2,soft=U.shape.value===1;core.blending=frost?THREE.AdditiveBlending:THREE.NormalBlending;core.transparent=frost||soft;core.depthWrite=!(frost||soft);core.needsUpdate=true;haloPts.visible=glowOn&&!frost;wake()}
 const on=(sel,test)=>document.querySelectorAll(sel).forEach(b=>b.classList.toggle('on',test(b)));
 const setLook=k=>{U.look.value=k;on('[data-look]',b=>+b.dataset.look===k);blend();sync()};
@@ -75,7 +85,11 @@ sizeIn.oninput=()=>setSize(sizeIn.value);document.querySelectorAll('[data-shape]
 document.querySelectorAll('[data-keep]').forEach(b=>b.onclick=()=>setKeep(+b.dataset.keep));glowBtn.onclick=()=>setGlow(!glowOn);spinBtn.onclick=()=>setSpin(!controls.autoRotate);
 const panel=document.getElementById('panel'),ptsBtn=document.getElementById('ptsBtn');ptsBtn.onclick=()=>{panel.hidden=!panel.hidden;ptsBtn.classList.toggle('on',!panel.hidden);ptsBtn.setAttribute('aria-expanded',!panel.hidden)};
 setCity(hp.get('city')!=='0');setSize(Math.min(3,Math.max(.3,+(hp.get('size')||1))));setShape(Math.max(0,SHAPES.indexOf(hp.get('shape')||'dot')));setKeep([1,.5,.25].includes(+hp.get('points'))?+hp.get('points'):1);setGlow(hp.get('glow')!=='0');setSpin(hp.get('spin')==='1');setLook(Math.max(0,LOOKS.indexOf(hp.get('look')||'height')));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else wake()});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();status.hidden=false;status.textContent='The 3D view paused. Reload this page to resume.'});
+const motionButton=document.getElementById('motion');
+// Alive: the canopy breathes (expands and returns on a 12 s cycle); off, everything holds still
+function updateMotionLabel(){motionButton.classList.toggle('on',playing);motionButton.setAttribute('aria-pressed',String(playing));document.getElementById('breatheNote').hidden=!playing}
+motionButton.onclick=()=>{playing=!playing;lastTime=0;if(!playing)U.time.value=0;updateMotionLabel();sync();wake()};updateMotionLabel();
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0}else wake()});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();status.hidden=false;status.textContent='The 3D view paused. Reload this page to resume.'});
 status.hidden=true;wake();
 }catch(error){console.error(error);status.textContent='The 3D view could not load. You can still see the rendered lake.';const retry=document.createElement('a');retry.href=location.href;retry.textContent='Reload viewer';status.append(retry)}
 </script></body></html>

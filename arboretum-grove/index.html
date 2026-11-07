@@ -1,48 +1,94 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050810"><title>Arboretum / Luminous grove — Abhinash Tummala</title><meta name="description" content="Explore a luminous 3D grove from Seattle's actual airborne LiDAR points. Touch to orbit and pinch to zoom."><meta property="og:image" content="https://nasht12.github.io/creative-portfolio/arboretum-grove/preview.webp"><style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050810;color:#ece9e2;font:14px/1.5 system-ui,sans-serif}canvas{display:block;touch-action:none;width:100%;height:100%}header{position:fixed;z-index:2;top:0;left:0;right:0;padding:max(20px,env(safe-area-inset-top)) 24px 0;pointer-events:none}a,button{pointer-events:auto;color:inherit}a{font-size:12px;text-decoration:none;opacity:.75}h1{font-weight:400;font-size:clamp(26px,4vw,40px);letter-spacing:-.035em;margin:25px 0 3px}header p{margin:0;color:#9ca6b8;font-size:12px}.controls{position:fixed;z-index:2;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;display:flex;justify-content:space-between;align-items:end;gap:20px;pointer-events:none}.caption{max-width:420px;font-size:11px;color:#9ca6b8}.caption p{margin:4px 0}.buttons{display:flex;gap:7px}.buttons button{min-height:44px;min-width:44px;border:1px solid #ffffff30;background:#101726dd;border-radius:24px;font:14px system-ui;padding:0 15px;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid #e6b77a;outline-offset:4px}#status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:min(85vw,340px);text-align:center;color:#c0bbce;background:#0e1424ed;padding:20px;border-radius:14px}#status a{display:block;margin-top:12px;text-decoration:underline}.fallback{position:fixed;inset:0;width:100%;height:100%;object-fit:contain}@media(max-width:600px){header{padding-left:18px;padding-right:18px}h1{margin-top:20px;font-size:28px}.controls{left:18px;right:18px;flex-direction:column;align-items:start;gap:12px}.caption{max-width:280px;font-size:10px}.buttons{align-self:flex-end}.buttons button{padding:0 13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050810;color:#ece9e2;font:14px/1.5 system-ui,sans-serif}canvas{display:block;touch-action:none;width:100%;height:100%}header{position:fixed;z-index:2;top:0;left:0;right:0;padding:max(20px,env(safe-area-inset-top)) 24px 0;pointer-events:none}a,button{pointer-events:auto;color:inherit}a{font-size:12px;text-decoration:none;opacity:.75}h1{font-weight:400;font-size:clamp(26px,4vw,40px);letter-spacing:-.035em;margin:25px 0 3px}header p{margin:0;color:#9ca6b8;font-size:12px}.controls{position:fixed;z-index:2;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;display:flex;justify-content:space-between;align-items:end;gap:20px;pointer-events:none}.caption{max-width:420px;font-size:11px;color:#9ca6b8}.caption p{margin:4px 0}.buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.buttons button,.looks button,#panel button{min-height:44px;min-width:44px;border:1px solid #ffffff30;background:#101726dd;border-radius:24px;font:14px system-ui;padding:0 15px;cursor:pointer}button.on{background:#ece9e2;color:#050810;border-color:#ece9e2}button:focus-visible,a:focus-visible{outline:2px solid #e6b77a;outline-offset:4px}
+.looks{position:fixed;z-index:2;top:max(20px,env(safe-area-inset-top));right:24px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:60vw}
+#panel{position:fixed;z-index:3;right:24px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 56px);background:#0e1424f2;border:1px solid #ffffff22;border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:auto auto;gap:10px 14px;align-items:center;font-size:13px}#panel[hidden]{display:none}#panel label{color:#9ca6b8}#panel .row{display:flex;gap:6px;flex-wrap:wrap}#panel button{min-height:36px;font-size:13px;padding:0 12px}#panel input[type=range]{width:170px;accent-color:#e6b77a}
+#status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:min(85vw,340px);text-align:center;color:#c0bbce;background:#0e1424ed;padding:20px;border-radius:14px}#status a{display:block;margin-top:12px;text-decoration:underline}.fallback{position:fixed;inset:0;width:100%;height:100%;object-fit:contain}
+@media(max-width:600px){header{padding-left:18px;padding-right:18px}h1{margin-top:20px;font-size:28px}.looks{top:auto;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 112px);left:18px;right:18px;max-width:none;justify-content:flex-start}.looks button{min-height:38px;font-size:13px;padding:0 12px}.controls{left:18px;right:18px;flex-direction:column;align-items:start;gap:12px}.caption{max-width:280px;font-size:10px}.buttons{align-self:flex-end}.buttons button{padding:0 13px}#panel{left:18px;right:18px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 168px)}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script></head><body>
 <img class="fallback" id="poster" src="preview.webp" alt="Luminous violet, amber, and cyan points revealing a grove at the Washington Park Arboretum.">
-<header><a href="../lidar-studies.html#seattle">← LiDAR studies</a><h1>Arboretum / Luminous grove</h1><p>Seattle · 193,555 laser returns</p></header>
-<div id="status" role="status">Loading the grove · 1.55 MB</div>
-<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p>Canopy expands and returns · Ground stays still</p><p>King County West 2021 LiDAR · Artistic height colors</p></div><div class="buttons"><button id="motion" aria-pressed="false">Pause motion</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
+<header><a href="../lidar-studies.html#seattle">← LiDAR studies</a><h1>Arboretum / Luminous grove</h1><p id="sub">Seattle · laser returns</p></header>
+<div class="looks" role="group" aria-label="Color"><button data-look="0">Height</button><button data-look="1">Sun</button><button data-look="2">Frost</button><button id="city" aria-pressed="true">City</button></div>
+<div id="panel" hidden role="group" aria-label="Points">
+<label for="size">Size</label><input id="size" type="range" min="0.3" max="3" step="0.05" value="1">
+<label>Shape</label><div class="row"><button data-shape="0">Dot</button><button data-shape="1">Soft</button><button data-shape="2">Square</button></div>
+<label>Points</label><div class="row"><button data-keep="1">All</button><button data-keep="0.5">Half</button><button data-keep="0.25">Quarter</button></div>
+<label>Effects</label><div class="row"><button id="glowBtn">Glow</button><button id="spin">Spin</button></div>
+</div>
+<div id="status" role="status">Loading the grove · 1.7 MB</div>
+<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p id="breatheNote" hidden>Canopy expands and returns · Ground stays still</p><p>King County West 2021 LiDAR · Height, sun and frost colors from the scan</p></div><div class="buttons"><button id="motion" aria-pressed="false">Alive</button><button id="ptsBtn" aria-expanded="false">Points</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
 <script type="module">
 const status=document.getElementById('status');
 try {
 const THREE=await import('three'),{OrbitControls}=await import('three/addons/controls/OrbitControls.js');
 const [meta,response]=await Promise.all([fetch('points.json').then(r=>{if(!r.ok)throw Error('Metadata unavailable');return r.json()}),fetch('points.bin')]);
-if(!response.ok)throw Error('Point data unavailable');const buffer=await response.arrayBuffer();if(buffer.byteLength!==meta.count*8)throw Error('Incomplete point data');
-const packed=new Uint16Array(buffer),positions=new Float32Array(meta.count*3),heights=new Uint16Array(meta.count);
-for(let i=0;i<meta.count;i++){for(let k=0;k<3;k++)positions[i*3+k]=packed[i*4+k]/65535*meta.span[k]+meta.min[k];heights[i]=packed[i*4+3]}
-const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('heightColor',new THREE.BufferAttribute(heights,1,true));geometry.computeBoundingSphere();
+if(!response.ok)throw Error('Point data unavailable');const buffer=await response.arrayBuffer();if(buffer.byteLength!==meta.count*9)throw Error('Incomplete point data');
+const n=meta.count,packed=new Uint16Array(buffer,0,n*3),hb=new Uint8Array(buffer,n*6,n),ib=new Uint8Array(buffer,n*7,n),fb=new Uint8Array(buffer,n*8,n);
+const positions=new Float32Array(n*3),flags=new Float32Array(n),rnd=new Float32Array(n);
+for(let i=0,s=7;i<n;i++){for(let k=0;k<3;k++)positions[i*3+k]=packed[i*3+k]/65535*meta.span[k]+meta.min[k];flags[i]=fb[i];s=(s*1103515245+12345)&0x7fffffff;rnd[i]=s/0x7fffffff}
+document.getElementById('sub').textContent=`Seattle · ${n.toLocaleString()} laser returns · ${meta.trees.toLocaleString()} in the trees`;
+const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('hgt',new THREE.BufferAttribute(hb,1,true));geometry.setAttribute('inten',new THREE.BufferAttribute(ib,1,true));geometry.setAttribute('flags',new THREE.BufferAttribute(flags,1));geometry.setAttribute('rnd',new THREE.BufferAttribute(rnd,1));geometry.computeBoundingSphere();
 const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0x050810);renderer.domElement.setAttribute('aria-label','Interactive 3D Arboretum grove. Drag to rotate and pinch to zoom.');renderer.domElement.setAttribute('role','img');document.body.prepend(renderer.domElement);document.getElementById('poster').hidden=true;
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,4000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=12;controls.maxDistance=1000;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;
-const uniforms={pixels:{value:1},glow:{value:0},time:{value:0}};
-const vertexShader=`attribute float heightColor; varying vec3 color; uniform float pixels; uniform float glow; uniform float time;
-vec3 palette(float t){vec3 a=vec3(.11,.17,.34),b=vec3(.22,.28,.65),c=vec3(.66,.20,.85),d=vec3(1.,.36,.48),e=vec3(1.,.72,.33),f=vec3(.55,1.,.90);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=meta.view.dist*.02;controls.maxDistance=meta.span[0]*3;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;controls.autoRotateSpeed=.6;
+const U={time:{value:0},breathe:{value:1},unit:{value:meta.units==='ft'?3.28:1},psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
+// Height: the luminous palette. Sun: warm where the sun reaches, blue in shadow. Frost: glacier ramp, canopy whitened.
+const vertexShader=`attribute float hgt,inten,flags,rnd; varying vec3 color; varying float hide;
+uniform float pixels,glow,look,city,sizeMul,shape,keep,psize,time,breathe,unit;
 float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+vec3 palette(float t){vec3 a=vec3(.11,.17,.34),b=vec3(.22,.28,.65),c=vec3(.66,.20,.85),d=vec3(1.,.36,.48),e=vec3(1.,.72,.33),f=vec3(.55,1.,.90);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
+vec3 glacier(float t){vec3 a=vec3(.075,.165,.388),b=vec3(.122,.31,.627),c=vec3(.184,.525,.761),d=vec3(.325,.761,.788),e=vec3(.651,.937,.847),f=vec3(.949,1.,.976);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
 void main(){
- float phase=mod(time,12.);float breath=phase<8.?pow(sin(phase*3.14159265359/8.),2.):0.;
- float canopy=smoothstep(.06,.25,heightColor);
- vec3 seed=vec3(hash(position),hash(position.yzx+19.),hash(position.zxy+47.));
- vec3 direction=normalize(vec3(seed.x-.5,.15+seed.y*.65,seed.z-.5));
- vec3 drift=direction*(3.+seed.y*10.)+vec3(sin(time*.65+seed.x*6.),0.,cos(time*.5+seed.z*6.))*1.5;
- vec3 p=position+drift*(breath*canopy);
- vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;color=palette(heightColor)*(1.+breath*canopy*.18);float core=clamp(pixels*.19/max(-mv.z,.1),1.2,6.);gl_PointSize=mix(core,core*3.,glow);
-}`;
-const fragmentShader=`varying vec3 color;uniform float glow;void main(){float r=length(gl_PointCoord-.5)*2.;if(r>1.)discard;float alpha=mix(1.,exp(-r*r*5.)*.22,glow);gl_FragColor=vec4(color,alpha);}`;
-const core=new THREE.ShaderMaterial({uniforms,vertexShader,fragmentShader});scene.add(new THREE.Points(geometry,core));
-const halo=new THREE.ShaderMaterial({uniforms:{pixels:uniforms.pixels,time:uniforms.time,glow:{value:1}},vertexShader,fragmentShader,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});scene.add(new THREE.Points(geometry,halo));
-let frame=0,lastTime=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches;
-const motionButton=document.getElementById('motion');
-function updateMotionLabel(){motionButton.textContent=playing?'Pause motion':'Play motion';motionButton.setAttribute('aria-pressed',String(!playing))}
-function draw(now){frame=0;if(playing){if(lastTime)uniforms.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;controls.update();renderer.render(scene,camera);if(playing)wake()}
-function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
-motionButton.onclick=()=>{playing=!playing;lastTime=0;updateMotionLabel();wake()};updateMotionLabel();
-function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();uniforms.pixels.value=renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));wake()}
-function reset(){const target=new THREE.Vector3(0,14,0),distance=Math.max(210,72/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,14+distance*.22,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
+  float tree=mod(flags,2.),canopy=mod(floor(flags/2.),2.),lit=floor(flags/4.);
+  hide=((tree<.5&&city<.5)||rnd>keep)?1.:0.;
+  vec3 c;
+  if(look<.5){c=palette(hgt);}
+  else if(look<1.5){c=lit>.5?mix(vec3(1.,.70,.42),vec3(1.,.945,.84),hgt):vec3(.17,.25,.45)+.12*hgt;if(tree<.5)c*=.6;}
+  else{c=glacier(pow(hgt,.65))*(.75+.45*inten);c=mix(c,vec3(.92,.98,1.),.55*canopy);if(tree<.5)c*=.45;c*=.45;}
+  color=c;
+  // breathing (Arboretum): the canopy drifts out and back on a 12 s cycle, the ground stays put
+  vec3 p=position;
+  if(breathe>.5){float phase=mod(time,12.);float breath=phase<8.?pow(sin(phase*3.14159265359/8.),2.):0.;
+    float cano=smoothstep(.06,.25,hgt);vec3 seed=vec3(hash(position),hash(position.yzx+19.),hash(position.zxy+47.));
+    vec3 dir=normalize(vec3(seed.x-.5,.15+seed.y*.65,seed.z-.5));
+    vec3 drift=(dir*(3.+seed.y*10.)+vec3(sin(time*.65+seed.x*6.),0.,cos(time*.5+seed.z*6.))*1.5)*unit;
+    p+=drift*(breath*cano);color*=1.+breath*cano*.18;}
+  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+  float core=clamp(pixels*psize*sizeMul*inversesqrt(max(keep,.1))*(shape>.5&&shape<1.5?1.7:1.)/max(-mv.z,.1),1.,8.*sizeMul+2.);
+  gl_PointSize=mix(core,core*3.,glow);}`;
+const fragmentShader=`varying vec3 color;varying float hide;uniform float glow,shape;void main(){if(hide>.5)discard;vec2 d=gl_PointCoord-.5;float r2=dot(d,d)*4.;float alpha=1.;
+  if(glow>.5){if(r2>1.)discard;alpha=exp(-r2*5.)*.22;}else if(shape<.5){if(r2>1.)discard;}else if(shape<1.5){if(r2>1.)discard;alpha=exp(-r2*3.5);}
+  gl_FragColor=vec4(color,alpha);}`;
+const core=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:0}},vertexShader,fragmentShader});scene.add(new THREE.Points(geometry,core));
+const halo=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:1}},vertexShader,fragmentShader,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const haloPts=new THREE.Points(geometry,halo);scene.add(haloPts);
+const hp0=new URLSearchParams(location.hash.slice(1));
+let frame=0,lastTime=0,playing=(hp0.has('alive')?hp0.get('alive')==='1':!!meta.breathe)&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+function draw(now){frame=0;if(playing){if(lastTime)U.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;controls.update();renderer.render(scene,camera);if(controls.autoRotate||playing)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();U.pixels.value=renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));wake()}
+function reset(){const v=meta.view,target=new THREE.Vector3(0,v.targetY,0),distance=Math.max(v.dist,v.fit/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,v.targetY+distance*v.elev,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
 addEventListener('resize',resize);resize();reset();
 document.getElementById('reset').onclick=reset;document.getElementById('zoomIn').onclick=()=>{camera.position.sub(controls.target).multiplyScalar(.8).add(controls.target);controls.update();wake()};document.getElementById('zoomOut').onclick=()=>{camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target);controls.update();wake()};
+// ---- looks, city and point controls; every setting lives in the URL (#look=sun&size=1.4&shape=soft&points=0.5&glow=0&spin=1&city=0)
+const LOOKS=['height','sun','frost'],SHAPES=['dot','soft','square'];let glowOn=true;
+const hp=new URLSearchParams(location.hash.slice(1));
+const sync=()=>{const h=new URLSearchParams();if(U.look.value)h.set('look',LOOKS[U.look.value]);if(!U.city.value)h.set('city','0');if(U.sizeMul.value!==1)h.set('size',U.sizeMul.value);if(U.shape.value)h.set('shape',SHAPES[U.shape.value]);if(U.keep.value!==1)h.set('points',U.keep.value);if(!glowOn)h.set('glow','0');if(controls.autoRotate)h.set('spin','1');if(typeof playing!=='undefined'&&playing!==!!meta.breathe)h.set('alive',playing?'1':'0');history.replaceState(null,'',h.toString()?'#'+h:location.pathname)};
+function blend(){const frost=U.look.value===2,soft=U.shape.value===1;core.blending=frost?THREE.AdditiveBlending:THREE.NormalBlending;core.transparent=frost||soft;core.depthWrite=!(frost||soft);core.needsUpdate=true;haloPts.visible=glowOn&&!frost;wake()}
+const on=(sel,test)=>document.querySelectorAll(sel).forEach(b=>b.classList.toggle('on',test(b)));
+const setLook=k=>{U.look.value=k;on('[data-look]',b=>+b.dataset.look===k);blend();sync()};
+const cityBtn=document.getElementById('city');const setCity=v=>{U.city.value=v?1:0;cityBtn.classList.toggle('on',v);cityBtn.setAttribute('aria-pressed',v);wake();sync()};
+const sizeIn=document.getElementById('size');const setSize=v=>{U.sizeMul.value=+(+v).toFixed(2);sizeIn.value=v;wake();sync()};
+const setShape=k=>{U.shape.value=k;on('[data-shape]',b=>+b.dataset.shape===k);blend();sync()};
+const setKeep=v=>{U.keep.value=v;on('[data-keep]',b=>+b.dataset.keep===v);wake();sync()};
+const glowBtn=document.getElementById('glowBtn');const setGlow=v=>{glowOn=v;glowBtn.classList.toggle('on',v);blend();sync()};
+const spinBtn=document.getElementById('spin');const setSpin=v=>{controls.autoRotate=v;spinBtn.classList.toggle('on',v);wake();sync()};
+document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>setLook(+b.dataset.look));cityBtn.onclick=()=>setCity(!U.city.value);
+sizeIn.oninput=()=>setSize(sizeIn.value);document.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>setShape(+b.dataset.shape));
+document.querySelectorAll('[data-keep]').forEach(b=>b.onclick=()=>setKeep(+b.dataset.keep));glowBtn.onclick=()=>setGlow(!glowOn);spinBtn.onclick=()=>setSpin(!controls.autoRotate);
+const panel=document.getElementById('panel'),ptsBtn=document.getElementById('ptsBtn');ptsBtn.onclick=()=>{panel.hidden=!panel.hidden;ptsBtn.classList.toggle('on',!panel.hidden);ptsBtn.setAttribute('aria-expanded',!panel.hidden)};
+setCity(hp.get('city')!=='0');setSize(Math.min(3,Math.max(.3,+(hp.get('size')||1))));setShape(Math.max(0,SHAPES.indexOf(hp.get('shape')||'dot')));setKeep([1,.5,.25].includes(+hp.get('points'))?+hp.get('points'):1);setGlow(hp.get('glow')!=='0');setSpin(hp.get('spin')==='1');setLook(Math.max(0,LOOKS.indexOf(hp.get('look')||'height')));
+const motionButton=document.getElementById('motion');
+// Alive: the canopy breathes (expands and returns on a 12 s cycle); off, everything holds still
+function updateMotionLabel(){motionButton.classList.toggle('on',playing);motionButton.setAttribute('aria-pressed',String(playing));document.getElementById('breatheNote').hidden=!playing}
+motionButton.onclick=()=>{playing=!playing;lastTime=0;if(!playing)U.time.value=0;updateMotionLabel();sync();wake()};updateMotionLabel();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0}else wake()});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();status.hidden=false;status.textContent='The 3D view paused. Reload this page to resume.'});
 status.hidden=true;wake();
 }catch(error){console.error(error);status.textContent='The 3D view could not load. You can still see the rendered grove.';const retry=document.createElement('a');retry.href=location.href;retry.textContent='Reload viewer';status.append(retry)}
