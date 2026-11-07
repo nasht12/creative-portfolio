@@ -53,10 +53,10 @@ void main(){
     vec3 drift=(dir*(3.+seed.y*10.)+vec3(sin(time*.65+seed.x*6.),0.,cos(time*.5+seed.z*6.))*1.5)*unit;
     p+=drift*(breath*cano);color*=1.+breath*cano*.18;}
   // passing light (from the forest-effects-lab study): a thin plane sweeps the scene every 12 s;
-  // points light up as it passes and leave a fading trail, everything else drops near dark
+  // points light up as it passes and leave a fading trail; the rest stays visible at 45%
   if(light>.5){float plane=lmin-lspan*.12+lspan*1.24*lphase;float d=position.x-plane;float w=lspan*.03;
     float band=exp(-d*d/(w*w));float trail=d<0.?exp(d/(lspan*.15)):0.;
-    color=mix(color,vec3(.48,1.,1.),band*.42)*(.06+band*1.25+trail*.32);}
+    color=mix(color,vec3(.48,1.,1.),band*.42)*(.45+band*1.0+trail*.3);}
   vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
   float core=clamp(pixels*psize*sizeMul*inversesqrt(max(keep,.1))*(shape>.5&&shape<1.5?1.7:1.)/max(-mv.z,.1),1.,8.*sizeMul+2.);
   gl_PointSize=mix(core,core*3.,glow);}`;

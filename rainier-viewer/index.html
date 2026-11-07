@@ -38,6 +38,7 @@ const mat = new THREE.ShaderMaterial({
   uniforms: {scale: {value: 1}, minPx: {value: 1.5}, mode: {value: 0}, sizeMul: {value: 0.34}, zLo: {value: 2818}, zHi: {value: 14400}, fogColor: {value: bg}, fogNear: {value: 60000}, fogFar: {value: 160000}},
   vertexShader: `
     attribute vec3 acol; attribute float asize;
+    uniform float light, lphase, lmin, lspan;
     uniform float scale, minPx, mode, sizeMul, zLo, zHi;
 vec3 ramp(float t) {
       vec3 c[6] = vec3[6](vec3(0.106,0.290,0.420), vec3(0.165,0.561,0.604), vec3(0.486,0.788,0.416),
@@ -53,6 +54,10 @@ vec3 ramp(float t) {
       float lum = dot(acol, vec3(0.299, 0.587, 0.114));
       vec3 pc = ramp((position.y - zLo) / (zHi - zLo)) * (0.55 + 0.65 * lum);
       vCol = mix(acol, pc, mode);
+      // passing light: a plane sweeps east-west every 12 s; points flare as it passes, the rest stays at 45%
+      if (light > 0.5) { float plane = lmin - lspan * 0.12 + lspan * 1.24 * lphase; float d = position.x - plane;
+        float w = lspan * 0.03; float band = exp(-d * d / (w * w)); float trail = d < 0.0 ? exp(d / (lspan * 0.15)) : 0.0;
+        vCol = mix(vCol, vec3(0.48, 1.0, 1.0), band * 0.42) * (0.45 + band * 1.0 + trail * 0.3); }
     }`,
   fragmentShader: `
     uniform vec3 fogColor; uniform float fogNear, fogFar; varying vec3 vCol; varying float vDepth;
@@ -103,5 +108,29 @@ const setStyle = pts => {
 };
 styleBtn.addEventListener('click', () => setStyle(!mat.uniforms.mode.value));
 if (hp.get('style') === 'points') setStyle(true);
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+// ---- Light: a sheet of light sweeps east-west through the scan (#light=1)
+{
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < pos.length; i += 3) { const x = pos[i]; if (x < lo) lo = x; if (x > hi) hi = x; }
+  Object.assign(mat.uniforms, {light: {value: 0}, lphase: {value: 0.5}, lmin: {value: lo}, lspan: {value: hi - lo}});
+  mat.needsUpdate = true;
+  const btn = document.createElement('button');
+  btn.id = 'lightbtn'; btn.textContent = 'Light';
+  btn.style.cssText = 'position:fixed;top:12px;z-index:2;font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff14;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer';
+  btn.style.right = document.getElementById('style') ? '128px' : '14px';
+  document.body.appendChild(btn);
+  if (hp.has('clean')) btn.style.display = 'none';
+  let on = false, last = 0;
+  const set = v => {
+    on = v; mat.uniforms.light.value = v ? 1 : 0;
+    btn.style.background = v ? '#d9d6cc' : '#ffffff14'; btn.style.color = v ? '#05070c' : '#d9d6cc';
+    const h = new URLSearchParams(location.hash.slice(1)); v ? h.set('light', '1') : h.delete('light');
+    history.replaceState(null, '', h.toString() ? '#' + h.toString().replace(/=(&|$)/g, '$1') : location.pathname + location.search);
+  };
+  btn.addEventListener('click', () => set(!on));
+  set(hp.get('light') === '1');
+  window.__light = now => { const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
+    if (on) mat.uniforms.lphase.value = (mat.uniforms.lphase.value + dt / 12) % 1; };
+}
+renderer.setAnimationLoop(now => { window.__light(now); controls.update(); renderer.render(scene, camera); });
 </script></body></html>
