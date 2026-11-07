@@ -22,7 +22,7 @@ canvas{display:block}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
 <a id="back" href="../../lidar-studies.html#landmarks">&larr; LiDAR studies</a>
-<div id="ui"><button data-look="sun">Sun</button><button data-look="frost">Frost</button><button data-look="height">Height</button><button id="city">City</button></div>
+<div id="ui"><button data-look="sun">Sun</button><button data-look="frost">Frost</button><button data-look="height">Height</button><button id="city">City</button><button id="lightBtn">Light</button></div>
 <div id="pts"><div id="panel" hidden>
 <label for="size">Size</label><input id="size" type="range" min="0.3" max="3" step="0.05" value="1">
 <label>Shape</label><div class="row"><button data-shape="0">Dot</button><button data-shape="1">Soft</button><button data-shape="2">Square</button></div>
@@ -59,17 +59,24 @@ for (let i = 0, s = 7; i < n; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; 
 geo.setAttribute('rnd', new THREE.BufferAttribute(rnd, 1));
 const mat = new THREE.ShaderMaterial({
   uniforms: {look: {value: 0}, scale: {value: 1}, size: {value: meta.size}, city: {value: 1},
-             sizeMul: {value: 1}, shape: {value: 0}, keep: {value: 1}},
+             sizeMul: {value: 1}, shape: {value: 0}, keep: {value: 1},
+             light: {value: 0}, lphase: {value: 0.5}, lmin: {value: -0.05 * (meta.height || 300)}, lspan: {value: 1.1 * (meta.height || 300)}},
   vertexShader: `
     attribute vec3 c0, c1, c2; attribute float sub, rnd;
-    uniform float look, scale, size, city, sizeMul, shape, keep;
+    uniform float look, scale, size, city, sizeMul, shape, keep, light, lphase, lmin, lspan;
     varying vec3 vCol; varying float vHide;
     void main() {
       vHide = ((sub < 0.5 && city < 0.5) || rnd > keep) ? 1.0 : 0.0;
       vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : c2);
       float frost = look > 0.5 && look < 1.5 ? 1.0 : 0.0;
       if (sub < 0.5) c = c * mix(0.32, 0.22, frost) + vec3(0.03, 0.045, 0.08) * (1.0 - frost);
-      vCol = c * mix(1.0, mix(0.35, 0.8, sub), frost);
+      vec3 color = c * mix(1.0, mix(0.35, 0.8, sub), frost);
+  // passing light (from the forest-effects-lab study): a thin plane sweeps the scene every 12 s;
+  // points light up as it passes and leave a fading trail, everything else drops near dark
+  if(light>.5){float plane=lmin-lspan*.12+lspan*1.24*lphase;float d=position.y-plane;float w=lspan*.03;
+    float band=exp(-d*d/(w*w));float trail=d<0.?exp(d/(lspan*.15)):0.;
+    color=mix(color,vec3(.48,1.,1.),band*.42)*(.06+band*1.25+trail*.32);}
+      vCol = color;
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_Position = projectionMatrix * mv;
       // thinner clouds get slightly bigger points so they don't vanish; soft dots need room to fade
@@ -124,6 +131,7 @@ const sync = () => {
   u.shape.value === 0 ? h.delete('shape') : h.set('shape', SHAPES[u.shape.value]);
   u.keep.value === 1 ? h.delete('points') : h.set('points', u.keep.value);
   controls.autoRotate ? h.delete('spin') : h.set('spin', '0');
+  typeof lightOn !== 'undefined' && lightOn ? h.set('light', '1') : h.delete('light');
   history.replaceState(null, '', '#' + h.toString().replace(/=(&|$)/g, '$1'));
 };
 const setLook = name => {
@@ -166,5 +174,19 @@ setKeep([1, 0.5, 0.25].includes(+hp.get('points')) ? +hp.get('points') : 1);
 setSpin(hp.get('spin') !== '0');
 setLook(hp.get('look') || 'sun');
 status.textContent = '';
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+// Light: a horizontal sheet of light rises through the landmark every 12 s
+const ext = meta.maxDistance / 6;
+const sheet = new THREE.Mesh(new THREE.PlaneGeometry(ext * 1.6, ext * 1.6), new THREE.MeshBasicMaterial({color: 0x64e7ed, transparent: true,
+  opacity: 0.03, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending}));
+sheet.rotation.x = -Math.PI / 2; sheet.position.set(meta.target[0], 0, meta.target[2]); sheet.visible = false; scene.add(sheet);
+const lightBtn = document.getElementById('lightBtn');
+var lightOn = false, last = 0;  // var: sync() can run before this line
+const setLight = on => { lightOn = on; mat.uniforms.light.value = on ? 1 : 0; sheet.visible = on; lightBtn.classList.toggle('on', on); sync(); };
+lightBtn.addEventListener('click', () => setLight(!lightOn));
+setLight(hp.get('light') === '1');
+renderer.setAnimationLoop(now => {
+  const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
+  if (lightOn) { const u = mat.uniforms; u.lphase.value = (u.lphase.value + dt / 12) % 1; sheet.position.y = u.lmin.value - u.lspan.value * 0.12 + u.lspan.value * 1.24 * u.lphase.value; }
+  controls.update(); renderer.render(scene, camera);
+});
 </script></body></html>

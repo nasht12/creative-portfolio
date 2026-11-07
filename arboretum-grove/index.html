@@ -16,7 +16,7 @@
 <label>Effects</label><div class="row"><button id="glowBtn">Glow</button><button id="spin">Spin</button></div>
 </div>
 <div id="status" role="status">Loading the grove · 1.7 MB</div>
-<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p id="breatheNote" hidden>Canopy expands and returns · Ground stays still</p><p>King County West 2021 LiDAR · Height, sun and frost colors from the scan</p></div><div class="buttons"><button id="motion" aria-pressed="false">Alive</button><button id="ptsBtn" aria-expanded="false">Points</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
+<div class="controls"><div class="caption"><p>Drag to orbit · Pinch or scroll to zoom · Two fingers to pan</p><p id="breatheNote" hidden>Canopy expands and returns · Ground stays still</p><p>King County West 2021 LiDAR · Height, sun and frost colors from the scan</p></div><div class="buttons"><button id="motion" aria-pressed="false">Alive</button><button id="lightBtn" aria-pressed="false">Light</button><button id="ptsBtn" aria-expanded="false">Points</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Reset view</button></div></div>
 <script type="module">
 const status=document.getElementById('status');
 try {
@@ -30,10 +30,10 @@ document.getElementById('sub').textContent=`Seattle · ${n.toLocaleString()} las
 const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('hgt',new THREE.BufferAttribute(hb,1,true));geometry.setAttribute('inten',new THREE.BufferAttribute(ib,1,true));geometry.setAttribute('flags',new THREE.BufferAttribute(flags,1));geometry.setAttribute('rnd',new THREE.BufferAttribute(rnd,1));geometry.computeBoundingSphere();
 const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0x050810);renderer.domElement.setAttribute('aria-label','Interactive 3D Arboretum grove. Drag to rotate and pinch to zoom.');renderer.domElement.setAttribute('role','img');document.body.prepend(renderer.domElement);document.getElementById('poster').hidden=true;
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=meta.view.dist*.02;controls.maxDistance=meta.span[0]*3;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;controls.autoRotateSpeed=.6;
-const U={time:{value:0},breathe:{value:1},unit:{value:meta.units==='ft'?3.28:1},psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
+const U={light:{value:0},lphase:{value:.5},lmin:{value:meta.min[0]},lspan:{value:meta.span[0]},time:{value:0},breathe:{value:1},unit:{value:meta.units==='ft'?3.28:1},psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
 // Height: the luminous palette. Sun: warm where the sun reaches, blue in shadow. Frost: glacier ramp, canopy whitened.
 const vertexShader=`attribute float hgt,inten,flags,rnd; varying vec3 color; varying float hide;
-uniform float pixels,glow,look,city,sizeMul,shape,keep,psize,time,breathe,unit;
+uniform float pixels,glow,look,city,sizeMul,shape,keep,psize,time,breathe,unit,light,lphase,lmin,lspan;
 float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
 vec3 palette(float t){vec3 a=vec3(.11,.17,.34),b=vec3(.22,.28,.65),c=vec3(.66,.20,.85),d=vec3(1.,.36,.48),e=vec3(1.,.72,.33),f=vec3(.55,1.,.90);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
 vec3 glacier(float t){vec3 a=vec3(.075,.165,.388),b=vec3(.122,.31,.627),c=vec3(.184,.525,.761),d=vec3(.325,.761,.788),e=vec3(.651,.937,.847),f=vec3(.949,1.,.976);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
@@ -52,6 +52,11 @@ void main(){
     vec3 dir=normalize(vec3(seed.x-.5,.15+seed.y*.65,seed.z-.5));
     vec3 drift=(dir*(3.+seed.y*10.)+vec3(sin(time*.65+seed.x*6.),0.,cos(time*.5+seed.z*6.))*1.5)*unit;
     p+=drift*(breath*cano);color*=1.+breath*cano*.18;}
+  // passing light (from the forest-effects-lab study): a thin plane sweeps the scene every 12 s;
+  // points light up as it passes and leave a fading trail, everything else drops near dark
+  if(light>.5){float plane=lmin-lspan*.12+lspan*1.24*lphase;float d=position.x-plane;float w=lspan*.03;
+    float band=exp(-d*d/(w*w));float trail=d<0.?exp(d/(lspan*.15)):0.;
+    color=mix(color,vec3(.48,1.,1.),band*.42)*(.06+band*1.25+trail*.32);}
   vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
   float core=clamp(pixels*psize*sizeMul*inversesqrt(max(keep,.1))*(shape>.5&&shape<1.5?1.7:1.)/max(-mv.z,.1),1.,8.*sizeMul+2.);
   gl_PointSize=mix(core,core*3.,glow);}`;
@@ -59,10 +64,16 @@ const fragmentShader=`varying vec3 color;varying float hide;uniform float glow,s
   if(glow>.5){if(r2>1.)discard;alpha=exp(-r2*5.)*.22;}else if(shape<.5){if(r2>1.)discard;}else if(shape<1.5){if(r2>1.)discard;alpha=exp(-r2*3.5);}
   gl_FragColor=vec4(color,alpha);}`;
 const core=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:0}},vertexShader,fragmentShader});scene.add(new THREE.Points(geometry,core));
+// a faint translucent sheet shows where the light is
+const sheet=new THREE.Mesh(new THREE.PlaneGeometry(meta.span[2],meta.span[1]*1.1),new THREE.MeshBasicMaterial({color:0x64e7ed,transparent:true,opacity:.03,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+sheet.rotation.y=Math.PI/2;sheet.position.set(0,meta.min[1]+meta.span[1]*.5,meta.min[2]+meta.span[2]*.5);sheet.visible=false;scene.add(sheet);
 const halo=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:1}},vertexShader,fragmentShader,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const haloPts=new THREE.Points(geometry,halo);scene.add(haloPts);
 const hp0=new URLSearchParams(location.hash.slice(1));
 let frame=0,lastTime=0,playing=(hp0.has('alive')?hp0.get('alive')==='1':!!meta.breathe)&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
-function draw(now){frame=0;if(playing){if(lastTime)U.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;controls.update();renderer.render(scene,camera);if(controls.autoRotate||playing)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
+let lightOn=false,lightLast=0;
+function draw(now){frame=0;if(playing){if(lastTime)U.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;
+  if(lightOn){if(lightLast)U.lphase.value=(U.lphase.value+Math.min((now-lightLast)/1000,.05)/12)%1;lightLast=now;sheet.position.x=U.lmin.value-U.lspan.value*.12+U.lspan.value*1.24*U.lphase.value}else lightLast=0;
+  controls.update();renderer.render(scene,camera);if(controls.autoRotate||playing||lightOn)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();U.pixels.value=renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));wake()}
 function reset(){const v=meta.view,target=new THREE.Vector3(0,v.targetY,0),distance=Math.max(v.dist,v.fit/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,v.targetY+distance*v.elev,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
 addEventListener('resize',resize);resize();reset();
@@ -70,7 +81,7 @@ document.getElementById('reset').onclick=reset;document.getElementById('zoomIn')
 // ---- looks, city and point controls; every setting lives in the URL (#look=sun&size=1.4&shape=soft&points=0.5&glow=0&spin=1&city=0)
 const LOOKS=['height','sun','frost'],SHAPES=['dot','soft','square'];let glowOn=true;
 const hp=new URLSearchParams(location.hash.slice(1));
-const sync=()=>{const h=new URLSearchParams();if(U.look.value)h.set('look',LOOKS[U.look.value]);if(!U.city.value)h.set('city','0');if(U.sizeMul.value!==1)h.set('size',U.sizeMul.value);if(U.shape.value)h.set('shape',SHAPES[U.shape.value]);if(U.keep.value!==1)h.set('points',U.keep.value);if(!glowOn)h.set('glow','0');if(controls.autoRotate)h.set('spin','1');if(typeof playing!=='undefined'&&playing!==!!meta.breathe)h.set('alive',playing?'1':'0');history.replaceState(null,'',h.toString()?'#'+h:location.pathname)};
+const sync=()=>{const h=new URLSearchParams();if(U.look.value)h.set('look',LOOKS[U.look.value]);if(!U.city.value)h.set('city','0');if(U.sizeMul.value!==1)h.set('size',U.sizeMul.value);if(U.shape.value)h.set('shape',SHAPES[U.shape.value]);if(U.keep.value!==1)h.set('points',U.keep.value);if(!glowOn)h.set('glow','0');if(controls.autoRotate)h.set('spin','1');if(typeof playing!=='undefined'&&playing!==!!meta.breathe)h.set('alive',playing?'1':'0');if(typeof lightOn!=='undefined'&&lightOn)h.set('light','1');history.replaceState(null,'',h.toString()?'#'+h:location.pathname)};
 function blend(){const frost=U.look.value===2,soft=U.shape.value===1;core.blending=frost?THREE.AdditiveBlending:THREE.NormalBlending;core.transparent=frost||soft;core.depthWrite=!(frost||soft);core.needsUpdate=true;haloPts.visible=glowOn&&!frost;wake()}
 const on=(sel,test)=>document.querySelectorAll(sel).forEach(b=>b.classList.toggle('on',test(b)));
 const setLook=k=>{U.look.value=k;on('[data-look]',b=>+b.dataset.look===k);blend();sync()};
@@ -88,6 +99,9 @@ setCity(hp.get('city')!=='0');setSize(Math.min(3,Math.max(.3,+(hp.get('size')||1
 const motionButton=document.getElementById('motion');
 // Alive: the canopy breathes (expands and returns on a 12 s cycle); off, everything holds still
 function updateMotionLabel(){motionButton.classList.toggle('on',playing);motionButton.setAttribute('aria-pressed',String(playing));document.getElementById('breatheNote').hidden=!playing}
+const lightBtn=document.getElementById('lightBtn');
+const setLight=v=>{lightOn=v;U.light.value=v?1:0;sheet.visible=v;lightBtn.classList.toggle('on',v);lightBtn.setAttribute('aria-pressed',String(v));lightLast=0;sync();wake()};
+lightBtn.onclick=()=>setLight(!lightOn);setLight(hp0.get('light')==='1');
 motionButton.onclick=()=>{playing=!playing;lastTime=0;if(!playing)U.time.value=0;updateMotionLabel();sync();wake()};updateMotionLabel();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0}else wake()});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();status.hidden=false;status.textContent='The 3D view paused. Reload this page to resume.'});
 status.hidden=true;wake();
