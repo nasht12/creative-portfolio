@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Amazon Spheres in LiDAR</title>
+<style>
+html,body{margin:0;height:100%;background:#06080e;color:#d9d6cc;font:12px/1.6 Consolas,ui-monospace,monospace;overflow:hidden}
+canvas{display:block}
+#hud{position:fixed;left:18px;bottom:16px;max-width:430px;opacity:.9;pointer-events:none;text-shadow:0 1px 2px #000}
+#hud b{font-size:14px;letter-spacing:.06em;color:#f1eee4}
+#ui{position:fixed;top:12px;right:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#ui button{font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff12;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer}
+#ui button:hover{background:#ffffff26}#ui button.on{background:#d9d6cc;color:#06080e;border-color:#d9d6cc}
+#back{position:fixed;top:16px;left:18px;color:#d9d6cc;text-decoration:none;opacity:.85}
+.clean #hud,.clean #ui,.clean #back{display:none}
+@media(max-width:600px){#ui{top:44px;left:14px;right:14px;justify-content:flex-start}#hud{right:18px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<a id="back" href="../../lidar-studies.html#landmarks">&larr; LiDAR studies</a>
+<div id="ui"><button data-look="sun">Sun</button><button data-look="frost">Frost</button><button data-look="height">Height</button><button id="city">City</button></div>
+<div id="hud"><b>Amazon Spheres</b><br>5,864 points on the landmark &middot; 90 ft tall &middot; King County West 2021 LiDAR<br>
+drag to orbit &middot; right-drag to pan &middot; scroll to zoom<br><span id="status">loading&hellip;</span></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+THREE.ColorManagement.enabled = false;
+const status = document.getElementById('status');
+const meta = await (await fetch('points.json')).json();
+const buf = await (await fetch('points.bin')).arrayBuffer();
+const n = meta.count;
+const q = new Uint16Array(buf, 0, n * 3);
+const cols = [0, 1, 2].map(k => new Uint8Array(buf, n * (6 + 3 * k), n * 3));
+const sub = new Uint8Array(buf, n * 15, n);
+const [sx, sy, sz] = meta.scale, [ox, oy, oz] = meta.offset;
+const pos = new Float32Array(n * 3), flag = new Float32Array(n);
+for (let i = 0; i < n; i++) {  // data: x east, y north, z up -> three.js: y up, -z north
+  pos[3 * i] = q[3 * i] * sx + ox;
+  pos[3 * i + 1] = q[3 * i + 2] * sz + oz;
+  pos[3 * i + 2] = -(q[3 * i + 1] * sy + oy);
+  flag[i] = sub[i];
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+['c0', 'c1', 'c2'].forEach((a, k) => geo.setAttribute(a, new THREE.BufferAttribute(cols[k], 3, true)));
+geo.setAttribute('sub', new THREE.BufferAttribute(flag, 1));
+const mat = new THREE.ShaderMaterial({
+  uniforms: {look: {value: 0}, scale: {value: 1}, size: {value: meta.size}, city: {value: 1}},
+  vertexShader: `
+    attribute vec3 c0, c1, c2; attribute float sub;
+    uniform float look, scale, size, city;
+    varying vec3 vCol; varying float vHide;
+    void main() {
+      vHide = (sub < 0.5 && city < 0.5) ? 1.0 : 0.0;
+      vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : c2);
+      float frost = look > 0.5 && look < 1.5 ? 1.0 : 0.0;
+      if (sub < 0.5) c = c * mix(0.32, 0.22, frost) + vec3(0.03, 0.045, 0.08) * (1.0 - frost);
+      vCol = c * mix(1.0, mix(0.35, 0.8, sub), frost);
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mv;
+      float s = size * mix(1.0, 0.7, frost) * mix(0.8, 1.0, sub);
+      gl_PointSize = clamp(s * scale / -mv.z, 1.4, 24.0);
+    }`,
+  fragmentShader: `
+    varying vec3 vCol; varying float vHide;
+    void main() {
+      if (vHide > 0.5) discard;
+      vec2 d = gl_PointCoord - 0.5;
+      if (dot(d, d) > 0.25) discard;
+      gl_FragColor = vec4(vCol, 1.0);
+    }`,
+});
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x06080e);
+scene.add(new THREE.Points(geo, mat));
+const camera = new THREE.PerspectiveCamera(42, 1, 1, 20000);
+const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+controls.maxDistance = meta.maxDistance;
+camera.position.fromArray(meta.camera);
+controls.target.fromArray(meta.target);
+const resize = () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  mat.uniforms.scale.value = innerHeight * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+};
+addEventListener('resize', resize);
+resize();
+const LOOKS = ['sun', 'frost', 'height'];
+const hp = new URLSearchParams(location.hash.slice(1));
+if (hp.has('clean')) document.body.classList.add('clean');
+const sync = () => {
+  const h = new URLSearchParams(location.hash.slice(1));
+  h.set('look', LOOKS[mat.uniforms.look.value]);
+  if (mat.uniforms.city.value) h.delete('city'); else h.set('city', '0');
+  history.replaceState(null, '', '#' + h.toString().replace(/=(&|$)/g, '$1'));
+};
+const setLook = name => {
+  const k = Math.max(0, LOOKS.indexOf(name));
+  mat.uniforms.look.value = k;
+  const frost = k === 1;  // additive: where points pile up, they glow
+  mat.blending = frost ? THREE.AdditiveBlending : THREE.NormalBlending;
+  mat.depthWrite = !frost;
+  mat.transparent = frost;
+  mat.needsUpdate = true;
+  document.querySelectorAll('[data-look]').forEach(b => b.classList.toggle('on', b.dataset.look === LOOKS[k]));
+  sync();
+};
+const cityBtn = document.getElementById('city');
+const setCity = on => { mat.uniforms.city.value = on ? 1 : 0; cityBtn.classList.toggle('on', on); sync(); };
+document.querySelectorAll('[data-look]').forEach(b => b.addEventListener('click', () => setLook(b.dataset.look)));
+cityBtn.addEventListener('click', () => setCity(!mat.uniforms.city.value));
+setCity(hp.get('city') !== '0');
+setLook(hp.get('look') || 'sun');
+status.textContent = '';
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script></body></html>
