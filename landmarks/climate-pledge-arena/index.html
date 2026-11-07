@@ -174,19 +174,15 @@ setKeep([1, 0.5, 0.25].includes(+hp.get('points')) ? +hp.get('points') : 1);
 setSpin(hp.get('spin') !== '0');
 setLook(hp.get('look') || 'sun');
 status.textContent = '';
-// Light: a horizontal sheet of light rises through the landmark every 12 s
-const ext = meta.maxDistance / 6;
-const sheet = new THREE.Mesh(new THREE.PlaneGeometry(ext * 1.6, ext * 1.6), new THREE.MeshBasicMaterial({color: 0x64e7ed, transparent: true,
-  opacity: 0.03, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending}));
-sheet.rotation.x = -Math.PI / 2; sheet.position.set(meta.target[0], 0, meta.target[2]); sheet.visible = false; scene.add(sheet);
+// Light: a band of light rises through the landmark every 12 s; only the points light up
 const lightBtn = document.getElementById('lightBtn');
 var lightOn = false, last = 0;  // var: sync() can run before this line
-const setLight = on => { lightOn = on; mat.uniforms.light.value = on ? 1 : 0; sheet.visible = on; lightBtn.classList.toggle('on', on); sync(); };
+const setLight = on => { lightOn = on; mat.uniforms.light.value = on ? 1 : 0; lightBtn.classList.toggle('on', on); sync(); };
 lightBtn.addEventListener('click', () => setLight(!lightOn));
 setLight(hp.get('light') === '1');
 renderer.setAnimationLoop(now => {
   const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
-  if (lightOn) { const u = mat.uniforms; u.lphase.value = (u.lphase.value + dt / 12) % 1; sheet.position.y = u.lmin.value - u.lspan.value * 0.12 + u.lspan.value * 1.24 * u.lphase.value; }
+  if (lightOn) { const u = mat.uniforms; u.lphase.value = (u.lphase.value + dt / 12) % 1; }
   controls.update(); renderer.render(scene, camera);
 });
 </script></body></html>

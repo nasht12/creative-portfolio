@@ -64,15 +64,12 @@ const fragmentShader=`varying vec3 color;varying float hide;uniform float glow,s
   if(glow>.5){if(r2>1.)discard;alpha=exp(-r2*5.)*.22;}else if(shape<.5){if(r2>1.)discard;}else if(shape<1.5){if(r2>1.)discard;alpha=exp(-r2*3.5);}
   gl_FragColor=vec4(color,alpha);}`;
 const core=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:0}},vertexShader,fragmentShader});scene.add(new THREE.Points(geometry,core));
-// a faint translucent sheet shows where the light is
-const sheet=new THREE.Mesh(new THREE.PlaneGeometry(meta.span[2],meta.span[1]*1.1),new THREE.MeshBasicMaterial({color:0x64e7ed,transparent:true,opacity:.03,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
-sheet.rotation.y=Math.PI/2;sheet.position.set(0,meta.min[1]+meta.span[1]*.5,meta.min[2]+meta.span[2]*.5);sheet.visible=false;scene.add(sheet);
 const halo=new THREE.ShaderMaterial({uniforms:{...U,glow:{value:1}},vertexShader,fragmentShader,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const haloPts=new THREE.Points(geometry,halo);scene.add(haloPts);
 const hp0=new URLSearchParams(location.hash.slice(1));
 let frame=0,lastTime=0,playing=(hp0.has('alive')?hp0.get('alive')==='1':!!meta.breathe)&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let lightOn=false,lightLast=0;
 function draw(now){frame=0;if(playing){if(lastTime)U.time.value+=Math.min((now-lastTime)/1000,.05);lastTime=now}else lastTime=0;
-  if(lightOn){if(lightLast)U.lphase.value=(U.lphase.value+Math.min((now-lightLast)/1000,.05)/12)%1;lightLast=now;sheet.position.x=U.lmin.value-U.lspan.value*.12+U.lspan.value*1.24*U.lphase.value}else lightLast=0;
+  if(lightOn){if(lightLast)U.lphase.value=(U.lphase.value+Math.min((now-lightLast)/1000,.05)/12)%1;lightLast=now}else lightLast=0;
   controls.update();renderer.render(scene,camera);if(controls.autoRotate||playing||lightOn)wake()}function wake(){if(!frame&&!document.hidden)frame=requestAnimationFrame(draw)}controls.addEventListener('change',wake);
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();U.pixels.value=renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));wake()}
 function reset(){const v=meta.view,target=new THREE.Vector3(0,v.targetY,0),distance=Math.max(v.dist,v.fit/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,v.targetY+distance*v.elev,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
@@ -100,7 +97,7 @@ const motionButton=document.getElementById('motion');
 // Alive: the canopy breathes (expands and returns on a 12 s cycle); off, everything holds still
 function updateMotionLabel(){motionButton.classList.toggle('on',playing);motionButton.setAttribute('aria-pressed',String(playing));document.getElementById('breatheNote').hidden=!playing}
 const lightBtn=document.getElementById('lightBtn');
-const setLight=v=>{lightOn=v;U.light.value=v?1:0;sheet.visible=v;lightBtn.classList.toggle('on',v);lightBtn.setAttribute('aria-pressed',String(v));lightLast=0;sync();wake()};
+const setLight=v=>{lightOn=v;U.light.value=v?1:0;lightBtn.classList.toggle('on',v);lightBtn.setAttribute('aria-pressed',String(v));lightLast=0;sync();wake()};
 lightBtn.onclick=()=>setLight(!lightOn);setLight(hp0.get('light')==='1');
 motionButton.onclick=()=>{playing=!playing;lastTime=0;if(!playing)U.time.value=0;updateMotionLabel();sync();wake()};updateMotionLabel();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0}else wake()});renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();status.hidden=false;status.textContent='The 3D view paused. Reload this page to resume.'});
