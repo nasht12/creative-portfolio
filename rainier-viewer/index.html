@@ -7,6 +7,8 @@ canvas{display:block}#hud{position:fixed;left:18px;bottom:16px;max-width:420px;o
 #hud b{color:#fff;font-weight:600}
 #style{position:fixed;top:12px;right:14px;z-index:2;font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff14;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer}#style:hover{background:#ffffff2a}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<link rel="stylesheet" href="../viewer-ui/viewer-ui.css">
+<style>#hud,body>a,#style,#lightbtn{display:none!important}canvas{touch-action:none}</style>
 </head><body>
 <a href="../lidar-studies.html#rainier" style="position:fixed;top:16px;left:18px;z-index:2;color:#d9d6cc;font:12px Consolas,monospace;text-decoration:none">&larr; LiDAR studies</a><button id="style">Point cloud</button><div id="hud"><b>Mount Rainier, 2,799,776 points</b><br>Rainier Wali 2022 bare-earth LiDAR (WA DNR) &middot; sampled every 46 ft &middot; colored by elevation<br>
 drag to orbit &middot; right-drag to pan &middot; scroll to zoom<br><span id="status">loading&hellip;</span></div>
@@ -38,7 +40,8 @@ const mat = new THREE.ShaderMaterial({
   uniforms: {scale: {value: 1}, minPx: {value: 1.5}, mode: {value: 0}, sizeMul: {value: 0.34}, zLo: {value: 2818}, zHi: {value: 14400}, fogColor: {value: bg}, fogNear: {value: 60000}, fogFar: {value: 160000}},
   vertexShader: `
     attribute vec3 acol; attribute float asize;
-    uniform float light, lphase, lmin, lspan;
+    uniform float light, lphase, lmin, lspan, uSize, uShape, uKeep;
+    attribute float rnd;
     uniform float scale, minPx, mode, sizeMul, zLo, zHi;
 vec3 ramp(float t) {
       vec3 c[6] = vec3[6](vec3(0.106,0.290,0.420), vec3(0.165,0.561,0.604), vec3(0.486,0.788,0.416),
@@ -50,21 +53,22 @@ vec3 ramp(float t) {
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_Position = projectionMatrix * mv;
       vDepth = -mv.z;
-      gl_PointSize = clamp(asize * mix(1.0, sizeMul, mode) * scale / vDepth, mix(minPx, 1.0, mode), 64.0);
+      gl_PointSize = clamp(asize * uSize * inversesqrt(max(uKeep, 0.1)) * (uShape > 0.5 && uShape < 1.5 ? 1.7 : 1.0) * mix(1.0, sizeMul, mode) * scale / vDepth, mix(minPx, 1.0, mode), 64.0);
       float lum = dot(acol, vec3(0.299, 0.587, 0.114));
       vec3 pc = ramp((position.y - zLo) / (zHi - zLo)) * (0.55 + 0.65 * lum);
       vCol = mix(acol, pc, mode);
-      // passing light: a plane sweeps east-west every 12 s; points flare as it passes, the rest stays at 45%
+      // passing light: a band sweeps east-west every 12 s; points flare as it passes, the rest stays at 45%
       if (light > 0.5) { float plane = lmin - lspan * 0.12 + lspan * 1.24 * lphase; float d = position.x - plane;
         float w = lspan * 0.03; float band = exp(-d * d / (w * w)); float trail = d < 0.0 ? exp(d / (lspan * 0.15)) : 0.0;
         vCol = mix(vCol, vec3(0.48, 1.0, 1.0), band * 0.42) * (0.45 + band * 1.0 + trail * 0.3); }
+      if (rnd > uKeep) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);   // Density: thinned points go off screen
     }`,
   fragmentShader: `
-    uniform vec3 fogColor; uniform float fogNear, fogFar; varying vec3 vCol; varying float vDepth;
+    uniform float uShape; uniform vec3 fogColor; uniform float fogNear, fogFar; varying vec3 vCol; varying float vDepth;
     void main() {
       vec2 p = gl_PointCoord - 0.5;
-      if (dot(p, p) > 0.25) discard;
-      gl_FragColor = vec4(mix(vCol, fogColor, smoothstep(fogNear, fogFar, vDepth)), 1.0);
+      float a = 1.0; if (uShape < 1.5) { if (dot(p, p) > 0.25) discard; if (uShape > 0.5) a = exp(-dot(p, p) * 14.0); }
+      gl_FragColor = vec4(mix(vCol, fogColor, smoothstep(fogNear, fogFar, vDepth)), a);
     }`,
 });
 const scene = new THREE.Scene();
@@ -108,29 +112,33 @@ const setStyle = pts => {
 };
 styleBtn.addEventListener('click', () => setStyle(!mat.uniforms.mode.value));
 if (hp.get('style') === 'points') setStyle(true);
-// ---- Light: a sheet of light sweeps east-west through the scan (#light=1)
+// ---- shared viewer UI: same layout, words and URL keys as every LiDAR viewer
 {
+  const rnd = new Float32Array(n);
+  for (let i = 0, s = 7; i < n; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; rnd[i] = s / 0x7fffffff; }
+  geo.setAttribute('rnd', new THREE.BufferAttribute(rnd, 1));
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < pos.length; i += 3) { const x = pos[i]; if (x < lo) lo = x; if (x > hi) hi = x; }
-  Object.assign(mat.uniforms, {light: {value: 0}, lphase: {value: 0.5}, lmin: {value: lo}, lspan: {value: hi - lo}});
+  Object.assign(mat.uniforms, {light: {value: 0}, lphase: {value: 0.5}, lmin: {value: lo}, lspan: {value: hi - lo},
+                               uSize: {value: 1}, uShape: {value: 0}, uKeep: {value: 1}});
   mat.needsUpdate = true;
-  const btn = document.createElement('button');
-  btn.id = 'lightbtn'; btn.textContent = 'Light';
-  btn.style.cssText = 'position:fixed;top:12px;z-index:2;font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff14;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer';
-  btn.style.right = document.getElementById('style') ? '128px' : '14px';
-  document.body.appendChild(btn);
-  if (hp.has('clean')) btn.style.display = 'none';
-  let on = false, last = 0;
-  const set = v => {
-    on = v; mat.uniforms.light.value = v ? 1 : 0;
-    btn.style.background = v ? '#d9d6cc' : '#ffffff14'; btn.style.color = v ? '#05070c' : '#d9d6cc';
-    const h = new URLSearchParams(location.hash.slice(1)); v ? h.set('light', '1') : h.delete('light');
-    history.replaceState(null, '', h.toString() ? '#' + h.toString().replace(/=(&|$)/g, '$1') : location.pathname + location.search);
-  };
-  btn.addEventListener('click', () => set(!on));
-  set(hp.get('light') === '1');
-  window.__light = now => { const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
-    if (on) mat.uniforms.lphase.value = (mat.uniforms.lphase.value + dt / 12) % 1; };
+  window.__lightOn = false;
+  const {mountViewerUI} = await import('../viewer-ui/viewer-ui.js');
+  mountViewerUI({
+    back: {href: '../lidar-studies.html#rainier'}, title: 'Mount Rainier / Elevation', subtitle: `Washington · ${n.toLocaleString()} points from the bare-earth survey`, notes: ['Rainier Wali 2022 bare-earth LiDAR (WA DNR) · Natural colors or the height ramp'],
+  colors: [{key: 'natural', label: 'Natural'}, {key: 'height', label: 'Height'}], color: 'natural', onColor: k => setStyle(k === 'height'),
+    onSize: v => { mat.uniforms.uSize.value = v; },
+    onShape: i => { mat.uniforms.uShape.value = i; const soft = i === 1; mat.transparent = soft; mat.depthWrite = !soft; mat.needsUpdate = true; },
+    onDensity: v => { mat.uniforms.uKeep.value = v; },
+    onLight: v => { window.__lightOn = v; mat.uniforms.light.value = v ? 1 : 0; },
+    effects: {spin: {default: controls.autoRotate}}, camera, controls,
+    reset: () => { camera.position.set(...meta.camera); controls.target.set(...meta.target); controls.update(); },
+  });
 }
-renderer.setAnimationLoop(now => { window.__light(now); controls.update(); renderer.render(scene, camera); });
+let lastT = 0;
+renderer.setAnimationLoop(now => {
+  const dt = lastT ? Math.min((now - lastT) / 1000, 0.05) : 0; lastT = now;
+  if (window.__lightOn) mat.uniforms.lphase.value = (mat.uniforms.lphase.value + dt / 12) % 1;
+  controls.update(); renderer.render(scene, camera);
+});
 </script></body></html>

@@ -1,39 +1,18 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Central Library in LiDAR</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050810">
+<title>Central Library in LiDAR — Abhinash Tummala</title>
+<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css">
 <style>
-html,body{margin:0;height:100%;background:#06080e;color:#d9d6cc;font:12px/1.6 Consolas,ui-monospace,monospace;overflow:hidden}
-canvas{display:block}
-#hud{position:fixed;left:18px;bottom:16px;max-width:430px;opacity:.9;pointer-events:none;text-shadow:0 1px 2px #000}
-#hud b{font-size:14px;letter-spacing:.06em;color:#f1eee4}
-#ui{position:fixed;top:12px;right:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-#ui button{font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff12;border:1px solid #ffffff30;border-radius:16px;padding:7px 13px;cursor:pointer}
-#ui button:hover{background:#ffffff26}#ui button.on{background:#d9d6cc;color:#06080e;border-color:#d9d6cc}
-#back{position:fixed;top:16px;left:18px;color:#d9d6cc;text-decoration:none;opacity:.85}
-#pts{position:fixed;right:14px;bottom:16px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-#pts>button,#panel button{font:12px Consolas,monospace;color:#d9d6cc;background:#ffffff12;border:1px solid #ffffff30;border-radius:16px;padding:6px 12px;cursor:pointer}
-#pts button:hover{background:#ffffff26}#pts button.on{background:#d9d6cc;color:#06080e;border-color:#d9d6cc}
-#panel{background:#0b0f1ae6;border:1px solid #ffffff22;border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto auto;gap:9px 12px;align-items:center}
-#panel[hidden]{display:none}#panel label{opacity:.7}#panel .row{display:flex;gap:5px;flex-wrap:wrap}
-#panel input[type=range]{width:150px;accent-color:#d9d6cc}
-.clean #hud,.clean #ui,.clean #back,.clean #pts{display:none}
-@media(max-width:600px){#ui{top:44px;left:14px;right:14px;justify-content:flex-start}#hud{right:18px;bottom:64px}#pts{left:14px;align-items:flex-start}}
+html,body{margin:0;height:100%;background:#06080e;color:#ece9e2;font:14px/1.5 system-ui,sans-serif;overflow:hidden}canvas{display:block}
+#status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);color:#c0bbce;background:#0e1424ed;padding:16px 20px;border-radius:14px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
-<a id="back" href="../../lidar-studies.html#landmarks">&larr; LiDAR studies</a>
-<div id="ui"><button data-look="sun">Sun</button><button data-look="frost">Frost</button><button data-look="height">Height</button><button id="city">City</button><button id="lightBtn">Light</button></div>
-<div id="pts"><div id="panel" hidden>
-<label for="size">Size</label><input id="size" type="range" min="0.3" max="3" step="0.05" value="1">
-<label>Shape</label><div class="row"><button data-shape="0">Dot</button><button data-shape="1">Soft</button><button data-shape="2">Square</button></div>
-<label>Points</label><div class="row"><button data-keep="1">All</button><button data-keep="0.5">Half</button><button data-keep="0.25">Quarter</button></div>
-<label>Motion</label><div class="row"><button id="spin">Spin</button></div>
-</div><button id="ptsbtn">Points &#9662;</button></div>
-<div id="hud"><b>Central Library</b><br>67,912 points on the landmark &middot; 195 ft tall &middot; King County West 2021 LiDAR<br>
-drag to orbit &middot; right-drag to pan &middot; scroll to zoom<br><span id="status">loading&hellip;</span></div>
+<div id="status" role="status">Loading 67,912 points&hellip;</div>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mountViewerUI} from '../../viewer-ui/viewer-ui.js';
 THREE.ColorManagement.enabled = false;
 const status = document.getElementById('status');
 const meta = await (await fetch('points.json')).json();
@@ -102,6 +81,7 @@ scene.background = new THREE.Color(0x06080e);
 scene.add(new THREE.Points(geo, mat));
 const camera = new THREE.PerspectiveCamera(42, 1, 1, 20000);
 const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.domElement.style.touchAction = 'none';
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -119,67 +99,29 @@ const resize = () => {
 };
 addEventListener('resize', resize);
 resize();
-const LOOKS = ['sun', 'frost', 'height'], SHAPES = ['dot', 'soft', 'square'];
-const hp = new URLSearchParams(location.hash.slice(1));
-if (hp.has('clean')) document.body.classList.add('clean');
-const sync = () => {
-  const h = new URLSearchParams(location.hash.slice(1));
-  h.set('look', LOOKS[mat.uniforms.look.value]);
-  if (mat.uniforms.city.value) h.delete('city'); else h.set('city', '0');
-  const u = mat.uniforms;
-  u.sizeMul.value === 1 ? h.delete('size') : h.set('size', u.sizeMul.value);
-  u.shape.value === 0 ? h.delete('shape') : h.set('shape', SHAPES[u.shape.value]);
-  u.keep.value === 1 ? h.delete('points') : h.set('points', u.keep.value);
-  controls.autoRotate ? h.delete('spin') : h.set('spin', '0');
-  typeof lightOn !== 'undefined' && lightOn ? h.set('light', '1') : h.delete('light');
-  history.replaceState(null, '', '#' + h.toString().replace(/=(&|$)/g, '$1'));
-};
-const setLook = name => {
-  const k = Math.max(0, LOOKS.indexOf(name));
-  mat.uniforms.look.value = k;
-  blend();
-  document.querySelectorAll('[data-look]').forEach(b => b.classList.toggle('on', b.dataset.look === LOOKS[k]));
-  sync();
-};
-function blend() {
+const reset = () => { camera.position.fromArray(meta.camera); controls.target.fromArray(meta.target); controls.update(); };
+// ---- controls: the shared viewer UI (same layout, words and URL keys in every LiDAR viewer)
+const LOOKN = {sun: 0, frost: 1, height: 2};
+const blend = () => {
   const frost = mat.uniforms.look.value === 1, soft = mat.uniforms.shape.value === 1;
   // frost adds light where points pile up; soft dots fade at the edge, so both blend
   mat.blending = frost ? THREE.AdditiveBlending : THREE.NormalBlending;
-  mat.depthWrite = !(frost || soft);
-  mat.transparent = frost || soft;
-  mat.needsUpdate = true;
-}
-const panel = document.getElementById('panel'), ptsBtn = document.getElementById('ptsbtn');
-ptsBtn.addEventListener('click', () => { panel.hidden = !panel.hidden; ptsBtn.classList.toggle('on', !panel.hidden); });
-const sizeIn = document.getElementById('size');
-const setSize = v => { mat.uniforms.sizeMul.value = +(+v).toFixed(2); sizeIn.value = v; sync(); };
-sizeIn.addEventListener('input', () => setSize(sizeIn.value));
-const setShape = k => { mat.uniforms.shape.value = k; blend();
-  document.querySelectorAll('[data-shape]').forEach(b => b.classList.toggle('on', +b.dataset.shape === k)); sync(); };
-document.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => setShape(+b.dataset.shape)));
-const setKeep = v => { mat.uniforms.keep.value = v;
-  document.querySelectorAll('[data-keep]').forEach(b => b.classList.toggle('on', +b.dataset.keep === v)); sync(); };
-document.querySelectorAll('[data-keep]').forEach(b => b.addEventListener('click', () => setKeep(+b.dataset.keep)));
-const spinBtn = document.getElementById('spin');
-const setSpin = on => { controls.autoRotate = on; spinBtn.classList.toggle('on', on); sync(); };
-spinBtn.addEventListener('click', () => setSpin(!controls.autoRotate));
-const cityBtn = document.getElementById('city');
-const setCity = on => { mat.uniforms.city.value = on ? 1 : 0; cityBtn.classList.toggle('on', on); sync(); };
-document.querySelectorAll('[data-look]').forEach(b => b.addEventListener('click', () => setLook(b.dataset.look)));
-cityBtn.addEventListener('click', () => setCity(!mat.uniforms.city.value));
-setCity(hp.get('city') !== '0');
-setSize(Math.min(3, Math.max(0.3, +(hp.get('size') || 1))));
-setShape(Math.max(0, SHAPES.indexOf(hp.get('shape') || 'dot')));
-setKeep([1, 0.5, 0.25].includes(+hp.get('points')) ? +hp.get('points') : 1);
-setSpin(hp.get('spin') !== '0');
-setLook(hp.get('look') || 'sun');
-status.textContent = '';
-// Light: a band of light rises through the landmark every 12 s; only the points light up
-const lightBtn = document.getElementById('lightBtn');
-var lightOn = false, last = 0;  // var: sync() can run before this line
-const setLight = on => { lightOn = on; mat.uniforms.light.value = on ? 1 : 0; lightBtn.classList.toggle('on', on); sync(); };
-lightBtn.addEventListener('click', () => setLight(!lightOn));
-setLight(hp.get('light') === '1');
+  mat.depthWrite = !(frost || soft); mat.transparent = frost || soft; mat.needsUpdate = true;
+};
+let lightOn = false, last = 0;
+mountViewerUI({
+  back: {href: '../../lidar-studies.html#landmarks'}, title: 'Central Library / Landmark',
+  subtitle: 'Seattle · 67,912 points on the landmark · 195 ft tall',
+  notes: ['King County West 2021 LiDAR · every scanned point, the city around it faint'],
+  colors: [{key: 'height', label: 'Height'}, {key: 'sun', label: 'Sun'}, {key: 'frost', label: 'Frost'}], color: 'sun',
+  onColor: k => { mat.uniforms.look.value = LOOKN[k]; blend(); },
+  onSurroundings: v => { mat.uniforms.city.value = v ? 1 : 0; }, surroundingsTitle: 'Show or hide the city around the landmark',
+  onSize: v => { mat.uniforms.sizeMul.value = v; }, onShape: i => { mat.uniforms.shape.value = i; blend(); },
+  onDensity: v => { mat.uniforms.keep.value = v; },
+  onLight: v => { lightOn = v; mat.uniforms.light.value = v ? 1 : 0; },
+  effects: {spin: {default: true}}, camera, controls, reset,
+});
+status.remove();
 renderer.setAnimationLoop(now => {
   const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
   if (lightOn) { const u = mat.uniforms; u.lphase.value = (u.lphase.value + dt / 12) % 1; }

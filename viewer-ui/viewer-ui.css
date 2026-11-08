@@ -1,0 +1,40 @@
+/* Shared controls for every LiDAR 3D viewer (landmarks, canopy, Seattle, Rainier).
+   Source: relief-renderer/studies/viewer_ui; copied to the portfolio's viewer-ui/. */
+.vui,.vui *{box-sizing:border-box}
+.vui{--bg:#050810;--ink:#ece9e2;--muted:#9ca6b8;--btn:#101726dd;--line:#ffffff30;--accent:#e6b77a;
+  font:14px/1.5 system-ui,sans-serif;color:var(--ink)}
+.vui button,.vui a{pointer-events:auto;color:inherit;font:inherit}
+.vui button{min-height:44px;min-width:44px;border:1px solid var(--line);background:var(--btn);border-radius:24px;padding:0 15px;cursor:pointer}
+.vui button:hover{background:#1b2436ee}
+.vui button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.vui button:focus-visible,.vui a:focus-visible,.vui input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.vui-header{position:fixed;z-index:2;top:0;left:0;right:0;padding:max(20px,env(safe-area-inset-top)) 24px 0;pointer-events:none;max-width:62vw}
+.vui-header a{font-size:12px;text-decoration:none;opacity:.75}
+.vui-header h1{font-weight:400;font-size:clamp(26px,4vw,40px);letter-spacing:-.035em;margin:25px 0 3px;line-height:1.1}
+.vui-header p{margin:0;color:var(--muted);font-size:12px}
+.vui-top{position:fixed;z-index:2;top:max(20px,env(safe-area-inset-top));right:24px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:46vw}
+.vui-group{display:flex;gap:4px;padding:3px;border:1px solid #ffffff1c;border-radius:27px;background:#0a0f1acc}
+.vui-group button{border-color:transparent;background:transparent}
+.vui-group button.on{border-color:var(--ink)}
+.vui-bottom{position:fixed;z-index:2;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;display:flex;justify-content:space-between;align-items:end;gap:20px;pointer-events:none}
+.vui-caption{max-width:440px;font-size:11px;color:var(--muted)}
+.vui-caption p{margin:4px 0}
+.vui-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.vui-panel{position:fixed;z-index:3;right:24px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 56px);background:#0e1424f2;border:1px solid #ffffff22;border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:auto auto;gap:10px 14px;align-items:center;font-size:13px}
+.vui-panel[hidden]{display:none}
+.vui-panel label{color:var(--muted)}
+.vui-panel .vui-row{display:flex;gap:6px;flex-wrap:wrap}
+.vui-panel button{min-height:36px;padding:0 12px;font-size:13px}
+.vui-panel input[type=range]{width:170px;accent-color:var(--accent)}
+.vui-clean .vui{display:none}
+@media(max-width:600px){
+  .vui-header{padding-left:18px;padding-right:18px;max-width:none}
+  .vui-header h1{margin-top:20px;font-size:28px}
+  .vui-top{top:auto;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 120px);left:18px;right:18px;max-width:none;justify-content:flex-start}
+  .vui-top button{min-height:38px;font-size:13px;padding:0 12px}
+  .vui-bottom{left:18px;right:18px;flex-direction:column;align-items:start;gap:12px}
+  .vui-caption{max-width:280px;font-size:10px}
+  .vui-actions{align-self:flex-end}
+  .vui-actions button{padding:0 13px}
+  .vui-panel{left:18px;right:18px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 176px)}
+}
