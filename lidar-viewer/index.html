@@ -8,6 +8,7 @@ canvas{display:block}#hud{position:fixed;left:18px;bottom:16px;max-width:420px;o
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link rel="stylesheet" href="../viewer-ui/viewer-ui.css">
+<script src="../viewer-ui/viewer-ui-handoff.js"></script>
 <style>#hud,body>a,#style,#lightbtn{display:none!important}canvas{touch-action:none}</style>
 </head><body>
 <div id="hud"><b>Seattle, 3,080,230 LiDAR points</b><br>King County West 2021 &middot; colored by height above ground &middot; water removed<br>
@@ -38,9 +39,10 @@ geo.setAttribute('asize', new THREE.BufferAttribute(size, 1));
 geo.setAttribute('hid', new THREE.BufferAttribute(meta.hotspots ? new Uint8Array(buf, n * 10, n) : new Uint8Array(n), 1));
 const bg = new THREE.Color(0x05070c);
 const mat = new THREE.ShaderMaterial({
-  uniforms: {uHover: {value: 0}, scale: {value: 1}, minPx: {value: 1.2}, fogColor: {value: bg}, fogNear: {value: 16000}, fogFar: {value: 48000}},
+  uniforms: {uHover: {value: 0}, uIso: {value: 0}, uBoxMin: {value: new THREE.Vector3()}, uBoxMax: {value: new THREE.Vector3()}, uReach: {value: 300},
+             scale: {value: 1}, minPx: {value: 1.2}, fogColor: {value: bg}, fogNear: {value: 16000}, fogFar: {value: 48000}},
   vertexShader: `
-    attribute vec3 acol; attribute float asize; attribute float hid; uniform float uHover;
+    attribute vec3 acol; attribute float asize; attribute float hid; uniform float uHover, uIso, uReach; uniform vec3 uBoxMin, uBoxMax;
     uniform float light, lphase, lmin, lspan, uSize, uShape, uKeep;
     attribute float rnd;
     uniform float scale, minPx; varying vec3 vCol; varying float vDepth;
@@ -50,9 +52,19 @@ const mat = new THREE.ShaderMaterial({
       vDepth = -mv.z;
       gl_PointSize = clamp(asize * uSize * inversesqrt(max(uKeep, 0.1)) * (uShape > 0.5 && uShape < 1.5 ? 1.7 : 1.0) * scale / vDepth, minPx, 48.0);
       vCol = acol;
-      if (uHover > 0.5) {   // a hotspot is hovered: it brightens, everything else steps back
-        if (abs(hid - uHover) < 0.5) { vCol = min(vCol * 1.45 + vec3(0.30, 0.22, 0.08), vec3(1.0)); gl_PointSize *= 1.3; }
-        else vCol *= 0.5;
+      // a hotspot is hovered: it brightens, everything else steps back. Flying in to it (uIso 0 -> 1)
+      // it settles to its own colors and the city around it dims and thins out the way its viewer shows it
+      if (uHover > 0.5) {
+        if (abs(hid - uHover) < 0.5) {
+          vCol = mix(min(vCol * 1.45 + vec3(0.30, 0.22, 0.08), vec3(1.0)), vCol * 1.08, uIso); gl_PointSize *= mix(1.3, 1.0, uIso);
+        } else {
+          vec3 q = max(max(uBoxMin - position, position - uBoxMax), 0.0);
+          float gone = uIso * smoothstep(uReach * 0.5, uReach, length(q.xz));
+          float inside = uReach < 100.0 && dot(q, q) < 1.0 ? 1.0 : 0.0;   // an area's own ground stays, as its viewer shows it
+          vCol *= mix(mix(0.5, 0.34, uIso), mix(0.5, 1.0, uIso), inside) * (1.0 - gone);
+          gl_PointSize *= 1.0 - gone;
+          if (gone > 0.97) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        }
       }
       // passing light: a band sweeps east-west every 12 s; points flare as it passes, the rest stays at 45%
       if (light > 0.5) { float plane = lmin - lspan * 0.12 + lspan * 1.24 * lphase; float d = position.x - plane;
@@ -107,7 +119,8 @@ css.textContent = `.spot-pin{position:fixed;z-index:1;width:9px;height:9px;margi
 #spot-tip{position:fixed;z-index:2;transform:translate(-50%,calc(-100% - 14px));background:#0e1424f2;border:1px solid #ffd48a66;border-radius:12px;padding:6px 11px;font:13px/1.35 system-ui,sans-serif;white-space:nowrap;pointer-events:auto}
 #spot-tip a{color:#ece9e2;text-decoration:none}
 #spot-fade{position:fixed;inset:0;z-index:6;background:#05070c;opacity:0;pointer-events:none;transition:opacity .45s}
-.spot-flying .spot-pin,.spot-flying .vui-bar{opacity:0;pointer-events:none}
+.vui-bar,.vui-title,.vui-back{transition:opacity .4s}
+.spot-flying .spot-pin,.spot-flying .vui-bar,.spot-flying .vui-title,.spot-flying .vui-back{opacity:0;pointer-events:none}
 #spot-tip small{display:block;color:#e6b77a;font-size:11px}#spot-tip[hidden]{display:none}
 .vui-clean .spot-pin,.vui-clean #spot-tip{display:none!important}`;
 document.head.appendChild(css);
@@ -144,6 +157,7 @@ function setHover(s) {
   if (hover) hover.pin.classList.remove('on');
   hover = s;
   mat.uniforms.uHover.value = s ? s.id : 0;
+  if (s) { mat.uniforms.uBoxMin.value.copy(s.box.min); mat.uniforms.uBoxMax.value.copy(s.box.max); mat.uniforms.uReach.value = s.view ? 40 : 300; viewMeta(s); }
   renderer.domElement.style.cursor = s ? 'pointer' : '';
   tip.hidden = !s;
   if (s && !flying) { s.pin.classList.add('on'); tipA.href = s.url; tipA.innerHTML = s.label + '<small>Open its 3D view \u2197</small>'; placeTip(); }
@@ -169,71 +183,125 @@ cv.addEventListener('pointerup', e => {
 });
 tipA.addEventListener('click', e => { if (hover) { e.preventDefault(); go(hover); } });
 
-// ---- opening a hotspot: the camera eases in to the exact angle that viewer opens at while its
-// data loads in the background, the screen fades, and the page changes. Back again, it flies out.
+// ---- opening a hotspot: one continuous move. The camera eases in to the exact view that viewer
+// opens with (its own lens, bearing and distance, read from its points.json) while its data loads,
+// and the city around the subject dims and thins the way that viewer shows it. The last frame is
+// handed to the next page, which holds it until its own first frame and dissolves into it
+// (viewer-ui-handoff.js). Back again, the city dissolves in from the viewer's frame and flies out.
 const fade = Object.assign(document.createElement('div'), {id: 'spot-fade'});
 document.body.appendChild(fade);
-const D2R = Math.PI / 180, TAN = Math.tan(camera.fov / 2 * D2R);
-function viewOf(s) {
+const D2R = Math.PI / 180, CITY_FOV = camera.fov;
+const metas = {};
+function viewMeta(s) {   // that viewer's points.json (a few hundred bytes), fetched once, on first hover
+  return metas[s.id] || (metas[s.id] = fetch(new URL('points.json', new URL(s.url, location.href))).then(r => r.json()).catch(() => null));
+}
+function viewOf(s, m) {   // the camera that viewer opens with, placed on this subject in city coordinates
   const c = s.box.getCenter(new THREE.Vector3()), d = s.box.getSize(new THREE.Vector3());
   if (s.view) {   // canopy viewer: 46 deg lens, a fixed bearing, height = distance x elev
-    const v = s.view, f = Math.tan(23 * D2R), dist = Math.max(v.dist, v.fit / (f * Math.min(camera.aspect, 1))) * f / TAN;
+    const v = (m && m.view) || s.view, dist = Math.max(v.dist, v.fit / (Math.tan(23 * D2R) * Math.min(camera.aspect, 1)));
     const t = new THREE.Vector3(c.x, s.box.min.y + v.targetY, c.z);
-    return {t, p: new THREE.Vector3(t.x + Math.sin(2.705) * dist, t.y + dist * v.elev, t.z + Math.cos(2.705) * dist)};
+    return {t, p: new THREE.Vector3(t.x + Math.sin(2.705) * dist, t.y + dist * v.elev, t.z + Math.cos(2.705) * dist), fov: 46};
   }
-  // landmark viewer: 42 deg lens, from 210 deg (south-southwest) and 18 deg up, 2.4 x the subject
-  const ext = Math.max(d.x, d.y, d.z), dist = ext * 2.4 * Math.tan(21 * D2R) / TAN, az = 210 * D2R, el = 18 * D2R;
-  return {t: c, p: new THREE.Vector3(c.x + dist * Math.sin(az) * Math.cos(el), c.y + dist * Math.sin(el), c.z - dist * Math.cos(az) * Math.cos(el))};
+  if (m && m.camera && m.target)   // landmark viewer: its own saved camera, as an offset from the subject's centre
+    return {t: c, p: c.clone().add(new THREE.Vector3(...m.camera).sub(new THREE.Vector3(...m.target))), fov: 42};
+  const ext = Math.max(d.x, d.y, d.z), dist = ext * 2.4, az = 210 * D2R, el = 18 * D2R;   // the same rule, if the file is missing
+  return {t: c, p: new THREE.Vector3(c.x + dist * Math.sin(az) * Math.cos(el), c.y + dist * Math.sin(el), c.z - dist * Math.cos(az) * Math.cos(el)), fov: 42};
+}
+const soft = (k, a, b) => { const x = Math.min(Math.max((k - a) / (b - a), 0), 1); return x * x * (3 - 2 * x); };   // gets going sooner
+const ease = (k, a, b) => { const x = Math.min(Math.max((k - a) / (b - a), 0), 1); return x * x * x * (x * (x * 6 - 15) + 10); };
+function setLens(fov) {
+  camera.fov = fov; camera.updateProjectionMatrix();
+  mat.uniforms.scale.value = renderer.domElement.height / (2 * Math.tan(fov * D2R / 2));
+}
+function turn(a, b) {   // the shortest signed turn in bearing from view a to view b
+  const s0 = new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)), s1 = new THREE.Spherical().setFromVector3(b.p.clone().sub(b.t));
+  const d = s1.theta - s0.theta; return d - Math.round(d / (2 * Math.PI)) * 2 * Math.PI;
 }
 let flying = false;
-function fly(a, b, ms) {   // orbit-style path: target slides, bearing turns, distance shrinks evenly in log
+function fly(a, b, ms, iso0, iso1) {
+  // one move in overlapping strokes that each start and end at rest, so nothing jolts: the aim
+  // slides onto the subject first, the distance closes evenly (in log) the whole way, the bearing
+  // and tilt swing round into the viewer's angle a beat later, and the lens settles last
   return new Promise(done => {
     flying = true; controls.enabled = false; controls.autoRotate = false;
-    const s0 = new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)), s1 = new THREE.Spherical().setFromVector3(b.p.clone().sub(b.t));
-    let dth = s1.theta - s0.theta; dth -= Math.round(dth / (2 * Math.PI)) * 2 * Math.PI;
-    const sp = new THREE.Spherical(), t0 = performance.now();
+    const s0 = new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)), s1 = new THREE.Spherical(), sp = new THREE.Spherical();
+    const t0 = performance.now(), off = new THREE.Vector3();
     (function step(now) {
-      const k = Math.min((now - t0) / ms, 1), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-      controls.target.lerpVectors(a.t, b.t, e);
-      sp.set(Math.exp(Math.log(s0.radius) * (1 - e) + Math.log(s1.radius) * e), s0.phi + (s1.phi - s0.phi) * e, s0.theta + dth * e);
+      const k = Math.min((now - t0) / ms, 1);
+      s1.setFromVector3(off.copy(b.p).sub(b.t));   // b may still be refined in flight (its points.json arriving)
+      let dth = s1.theta - s0.theta; dth -= Math.round(dth / (2 * Math.PI)) * 2 * Math.PI;
+      const eT = soft(k, 0, 0.75), eR = soft(k, 0, 1), eA = ease(k, 0.1, 1), eL = ease(k, 0.3, 1);
+      controls.target.lerpVectors(a.t, b.t, eT);
+      sp.set(Math.exp(Math.log(s0.radius) * (1 - eR) + Math.log(s1.radius) * eR), s0.phi + (s1.phi - s0.phi) * eA, s0.theta + dth * eA);
       camera.position.setFromSpherical(sp).add(controls.target);
       camera.lookAt(controls.target);
+      setLens(a.fov + (b.fov - a.fov) * eL);
+      mat.uniforms.uIso.value = iso0 + (iso1 - iso0) * (iso1 > iso0 ? ease(k, 0.25, 1) : ease(k, 0, 0.45));   // flying out, the city returns early
       placeTip();
       if (k < 1) requestAnimationFrame(step);
-      else { flying = false; controls.enabled = true; controls.update(); placePins(); done(); }
+      else { flying = false; done(); }
     })(t0);
   });
 }
-const store = (k, v) => { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const store = (k, v) => { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const recall = k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } };
+const view = () => ({p: camera.position.clone(), t: controls.target.clone(), fov: camera.fov});
+const plain = v => ({p: v.p.toArray(), t: v.t.toArray(), fov: v.fov});
+function frameNow() {   // the frame on screen now, as a JPEG small enough for sessionStorage
+  renderer.render(scene, camera);
+  const src = renderer.domElement, w = Math.min(src.width, 1920), c = document.createElement('canvas');
+  c.width = w; c.height = Math.round(src.height * w / src.width);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return q => c.toDataURL('image/jpeg', q);
+}
 async function go(s) {
   if (flying) return;
   setHover(s);
-  tipA.innerHTML = s.label + '<small>Opening its 3D view\u2026</small>';
+  tipA.innerHTML = s.label + '<small>Opening its 3D view…</small>';
   document.body.classList.add('spot-flying');
-  store('lidarCity', {id: s.id, cam: camera.position.toArray(), target: controls.target.toArray()});
   const base = new URL(s.url, location.href);   // warm the cache, so the next page opens at once
-  const load = Promise.all(['', 'points.json', 'points.bin'].map(f => fetch(new URL(f, base)).then(r => r.arrayBuffer()).catch(() => null)));
-  await fly({p: camera.position.clone(), t: controls.target.clone()}, viewOf(s), 2400);
+  const load = Promise.all(['', 'points.bin'].map(f => fetch(new URL(f, base)).then(r => r.arrayBuffer()).catch(() => null)).concat(viewMeta(s)));
+  const from = view(), m0 = await Promise.race([viewMeta(s), new Promise(r => setTimeout(r, 250))]);
+  const to = viewOf(s, m0);
+  if (!m0) viewMeta(s).then(m => { if (m) { const v = viewOf(s, m); to.p.copy(v.p); to.t.copy(v.t); } });
+  // longer when it has further to turn or to close in, so the pace stays calm
+  const ms = Math.min(4200, 2600 + 900 * Math.abs(turn(from, to)) / Math.PI + 160 * Math.abs(Math.log(from.p.distanceTo(from.t) / to.p.distanceTo(to.t))));
+  await fly(from, to, ms, 0, 1);
+  tip.hidden = true;
   await Promise.race([load, new Promise(r => setTimeout(r, 8000))]);
-  fade.style.opacity = 1;
-  await new Promise(r => setTimeout(r, 450));
+  store('lidarCity', {id: s.id, cam: from.p.toArray(), target: from.t.toArray(), dest: plain(view())});
+  const shot = frameNow(), h = {path: base.pathname, at: Date.now(), offset: camera.position.clone().sub(controls.target).toArray(), fov: camera.fov};
+  if (!store('lidarHandoff', {...h, snap: shot(0.88)}) && !store('lidarHandoff', {...h, snap: shot(0.6)})) {
+    store('lidarHandoff', h);   // no room for the frame: fall back to a quick fade
+    fade.style.opacity = 1; await new Promise(r => setTimeout(r, 450));
+  }
   location.href = s.url;
 }
-function comeBack(any) {   // returning from a hotspot's viewer: start at its angle and fly back out
+function comeBack(restored) {   // returning from a hotspot's viewer: start on its view and fly back out
   const st = recall('lidarCity'), s = st && spots.find(x => x.id === st.id);
   store('lidarCity');
-  document.body.classList.remove('spot-flying');
   let ref = '', nav = ''; try { ref = document.referrer; nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
-  // a fresh load from that viewer's back link, or a history step back (where the referrer is stale)
-  if (!s || !(any || nav === 'back_forward' || ref.includes(new URL(s.url, location.href).pathname))) { fade.style.opacity = 0; return; }
-  const v = viewOf(s);
-  camera.position.copy(v.p); controls.target.copy(v.t);
-  fade.style.transition = 'none'; fade.style.opacity = 1; fade.offsetWidth; fade.style.transition = ''; fade.style.opacity = 0;
-  setHover(s);
-  fly(v, {p: new THREE.Vector3(...st.cam), t: new THREE.Vector3(...st.target)}, 2000).then(() => setHover(null));
+  // the page restored as it was left, a fresh load from that viewer's back link, or a history step back
+  if (!s || !(restored || nav === 'back_forward' || ref.includes(new URL(s.url, location.href).pathname))) {
+    document.body.classList.remove('spot-flying'); mat.uniforms.uIso.value = 0; setLens(CITY_FOV); fade.style.opacity = 0;
+    window.vuiHandoffDone && window.vuiHandoffDone(); controls.enabled = true; return;
+  }
+  const ho = window.__vuiHandoff; window.__vuiHandoff = null;
+  controls.enabled = false; controls.autoRotate = false;   // hold still until the fly-out starts
+  const d = st.dest, v = d ? {p: new THREE.Vector3(...d.p), t: new THREE.Vector3(...d.t), fov: d.fov} : viewOf(s, null);
+  if (ho && ho.offset) { v.p.copy(v.t).add(new THREE.Vector3(...ho.offset)); v.fov = ho.fov || v.fov; }   // where the visitor left it, spun or moved
+  camera.position.copy(v.p); controls.target.copy(v.t); setLens(v.fov); camera.lookAt(v.t);
+  document.body.classList.add('spot-flying');
+  hover = null; setHover(s); tip.hidden = true; mat.uniforms.uIso.value = 1;
+  if (!(ho && ho.snap)) { fade.style.transition = 'none'; fade.style.opacity = 1; fade.offsetWidth; fade.style.transition = ''; }
+  fade.style.opacity = 0;
+  requestAnimationFrame(() => window.vuiHandoffDone && window.vuiHandoffDone());   // dissolve from the viewer's last frame
+  // let the dissolve get going before moving, so the two frames never drift apart while both show
+  setTimeout(() => fly(v, {p: new THREE.Vector3(...st.cam), t: new THREE.Vector3(...st.target), fov: CITY_FOV}, 2600, 1, 0).then(() => {
+    document.body.classList.remove('spot-flying'); controls.enabled = true; controls.update(); setHover(null); placePins();
+  }), ho && ho.snap ? 550 : 0);
 }
-addEventListener('pageshow', e => { if (e.persisted) comeBack(true); });   // the browser's back button
+addEventListener('pageshow', e => { if (e.persisted) { window.vuiHandoff && window.vuiHandoff(); comeBack(true); } });   // the browser's back button
 { const t0 = performance.now();   // after the shared controls mount (they set the spin and the view)
   (function wait() { if (document.querySelector('.vui-bar') || performance.now() - t0 > 4000) comeBack(false); else requestAnimationFrame(wait); })(); }
 controls.addEventListener('change', placePins);

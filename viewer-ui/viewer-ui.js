@@ -152,8 +152,34 @@ export function mountViewerUI(o) {
   const label = !came ? (o.back && o.back.label) || 'LiDAR studies' : fromCity ? 'Seattle'
     : /lidar-studies/.test(from.pathname) ? 'LiDAR studies' : 'Back';
   const back = o.back ? el('a', {class: 'vui vui-back', href: came ? ref : o.back.href, text: '← ' + label}) : null;
-  if (back && came) back.addEventListener('click', e => { if (!e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); history.back(); } });
-  if (fromCity) {
+  if (back && came) back.addEventListener('click', e => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    const cv = document.querySelector('canvas');
+    if (!fromCity || !cv) return history.back();
+    // back to the city: hand it this view's last frame, so it dissolves from here as it flies out.
+    // A frame callback queued now runs right after the viewer's own draw, while the frame is readable.
+    wake();
+    requestAnimationFrame(() => {
+      try {
+        const w = Math.min(cv.width, 1920), c = el('canvas', {width: w, height: Math.round(cv.height * w / cv.width)});
+        c.getContext('2d').drawImage(cv, 0, 0, c.width, c.height);
+        sessionStorage.setItem('lidarHandoff', JSON.stringify({path: from.pathname, at: Date.now(), back: true, snap: c.toDataURL('image/jpeg', 0.85),
+          offset: o.camera ? o.camera.position.clone().sub(o.controls.target).toArray() : null, fov: o.camera && o.camera.fov}));
+      } catch (err) {}
+      history.back();
+    });
+  });
+  // arriving through a handoff (the city viewer's fly-in): start on the exact view it ended on,
+  // dissolve from its last frame once this one has drawn, and let the spin build up gently
+  const ho = window.__vuiHandoff;
+  if (ho && ho.offset && !ho.back && o.camera && o.controls) {
+    window.__vuiHandoff = null;
+    o.camera.position.copy(o.controls.target).add(o.camera.position.clone().fromArray(ho.offset));
+    o.controls.update();
+  }
+  if (ho) requestAnimationFrame(() => { wake(); requestAnimationFrame(() => window.vuiHandoffDone && window.vuiHandoffDone()); });
+  if (fromCity && !(ho && ho.snap)) {
     const veil = el('div', {class: 'vui-veil'});
     document.body.appendChild(veil);
     requestAnimationFrame(() => requestAnimationFrame(() => { veil.style.opacity = 0; setTimeout(() => veil.remove(), 900); }));
@@ -182,5 +208,10 @@ export function mountViewerUI(o) {
   if (o.onDensity) setDensity(s.density);
   if (o.onGlow) setGlow(s.glow);
   if (o.controls) setSpin(s.spin);
+  if (ho && ho.offset && !ho.back && o.controls && o.controls.autoRotate) {   // spin eases in over 3 s, from rest
+    const full = o.controls.autoRotateSpeed, t0 = performance.now();
+    o.controls.autoRotateSpeed = 0;
+    (function ramp(now) { const k = Math.min((now - t0) / 3000, 1); o.controls.autoRotateSpeed = full * k * k * (3 - 2 * k); wake(); if (k < 1) requestAnimationFrame(ramp); })(t0);
+  }
   return {state: s, setSubtitle: t => { sub.textContent = t; }};
 }

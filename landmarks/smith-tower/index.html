@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050810">
 <title>Smith Tower in LiDAR — Abhinash Tummala</title>
-<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css">
+<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css"><script src="../../viewer-ui/viewer-ui-handoff.js"></script>
 <style>
 html,body{margin:0;height:100%;background:#06080e;color:#ece9e2;font:14px/1.5 system-ui,sans-serif;overflow:hidden}canvas{display:block}
 #status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);color:#c0bbce;background:#0e1424ed;padding:16px 20px;border-radius:14px}
@@ -37,16 +37,17 @@ const rnd = new Float32Array(n);
 for (let i = 0, s = 7; i < n; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; rnd[i] = s / 0x7fffffff; }
 geo.setAttribute('rnd', new THREE.BufferAttribute(rnd, 1));
 const mat = new THREE.ShaderMaterial({
-  uniforms: {look: {value: 0}, scale: {value: 1}, size: {value: meta.size}, city: {value: 1},
+  uniforms: {look: {value: 0}, fromH: {value: 0}, scale: {value: 1}, size: {value: meta.size}, city: {value: 1},
              sizeMul: {value: 1}, shape: {value: 0}, keep: {value: 1},
              light: {value: 0}, lphase: {value: 0.5}, lmin: {value: -0.05 * (meta.height || 300)}, lspan: {value: 1.1 * (meta.height || 300)}},
   vertexShader: `
     attribute vec3 c0, c1, c2; attribute float sub, rnd;
-    uniform float look, scale, size, city, sizeMul, shape, keep, light, lphase, lmin, lspan;
+    uniform float look, fromH, scale, size, city, sizeMul, shape, keep, light, lphase, lmin, lspan;
     varying vec3 vCol; varying float vHide;
     void main() {
       vHide = ((sub < 0.5 && city < 0.5) || rnd > keep) ? 1.0 : 0.0;
       vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : c2);
+      if (look < 0.5 || look > 1.5) c = mix(c, c2, fromH);   // arriving from the city: its height colors first
       float frost = look > 0.5 && look < 1.5 ? 1.0 : 0.0;
       if (sub < 0.5) c = c * mix(0.32, 0.22, frost) + vec3(0.03, 0.045, 0.08) * (1.0 - frost);
       vec3 color = c * mix(1.0, mix(0.35, 0.8, sub), frost);
@@ -109,6 +110,13 @@ const blend = () => {
   mat.depthWrite = !(frost || soft); mat.transparent = frost || soft; mat.needsUpdate = true;
 };
 let lightOn = false, last = 0;
+// arriving from the city viewer's fly-in, the subject is still in the city's height colors; once the
+// frame has dissolved in, they settle into this viewer's own look
+if (window.__vuiHandoff && window.__vuiHandoff.offset) {
+  mat.uniforms.fromH.value = 1;
+  const t0 = performance.now() + 1100;
+  (function settle(now) { const k = Math.min(Math.max((now - t0) / 2400, 0), 1); mat.uniforms.fromH.value = 1 - k * k * (3 - 2 * k); if (k < 1) requestAnimationFrame(settle); })(t0);
+}
 mountViewerUI({
   back: {href: '../../lidar-studies.html#landmarks'}, title: 'Smith Tower',
   subtitle: 'Seattle · 38,363 points on the landmark · 459 ft tall',
