@@ -1,40 +1,64 @@
 /* Shared controls for every LiDAR 3D viewer (landmarks, canopy, Seattle, Rainier).
-   Source: relief-renderer/studies/viewer_ui; copied to the portfolio's viewer-ui/. */
+   Source: relief-renderer/studies/viewer_ui; copied to the portfolio's viewer-ui/.
+   Layout: back link top left · control bar top right · small title + info icon bottom left. */
 .vui,.vui *{box-sizing:border-box}
-.vui{--bg:#050810;--ink:#ece9e2;--muted:#9ca6b8;--btn:#101726dd;--line:#ffffff30;--accent:#e6b77a;
-  font:14px/1.5 system-ui,sans-serif;color:var(--ink)}
+.vui{--bg:#050810;--ink:#ece9e2;--muted:#9ca6b8;--btn:#101726dd;--line:#ffffff2a;--accent:#e6b77a;
+  font:13px/1.45 system-ui,sans-serif;color:var(--ink)}
 .vui button,.vui a{pointer-events:auto;color:inherit;font:inherit}
-.vui button{min-height:44px;min-width:44px;border:1px solid var(--line);background:var(--btn);border-radius:24px;padding:0 15px;cursor:pointer}
+.vui button{min-height:36px;border:1px solid var(--line);background:var(--btn);border-radius:20px;padding:0 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 .vui button:hover{background:#1b2436ee}
+.vui button:focus-visible,.vui a:focus-visible,.vui input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .vui button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.vui button:focus-visible,.vui a:focus-visible,.vui input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-.vui-header{position:fixed;z-index:2;top:0;left:0;right:0;padding:max(20px,env(safe-area-inset-top)) 24px 0;pointer-events:none;max-width:62vw}
-.vui-header a{font-size:12px;text-decoration:none;opacity:.75}
-.vui-header h1{font-weight:400;font-size:clamp(26px,4vw,40px);letter-spacing:-.035em;margin:25px 0 3px;line-height:1.1}
-.vui-header p{margin:0;color:var(--muted);font-size:12px}
-.vui-top{position:fixed;z-index:2;top:max(20px,env(safe-area-inset-top));right:24px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:46vw}
-.vui-group{display:flex;gap:4px;padding:3px;border:1px solid #ffffff1c;border-radius:27px;background:#0a0f1acc}
-.vui-group button{border-color:transparent;background:transparent}
-.vui-group button.on{border-color:var(--ink)}
-.vui-bottom{position:fixed;z-index:2;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;display:flex;justify-content:space-between;align-items:end;gap:20px;pointer-events:none}
-.vui-caption{max-width:440px;font-size:11px;color:var(--muted)}
-.vui-caption p{margin:4px 0}
-.vui-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-.vui-panel{position:fixed;z-index:3;right:24px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 56px);background:#0e1424f2;border:1px solid #ffffff22;border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:auto auto;gap:10px 14px;align-items:center;font-size:13px}
-.vui-panel[hidden]{display:none}
+
+/* back link */
+.vui-back{position:fixed;z-index:2;top:max(18px,env(safe-area-inset-top));left:22px;font-size:12px;text-decoration:none;opacity:.7}
+.vui-back:hover{opacity:1}
+
+/* control bar */
+.vui-bar{position:fixed;z-index:3;top:max(14px,env(safe-area-inset-top));right:18px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 150px)}
+.vui-icon{width:36px;padding:0;justify-content:center}
+.vui-icon svg{width:17px;height:17px}
+.vui-caret{font-size:10px;opacity:.7}
+.vui-k{color:var(--muted)}
+/* toggles: a label with a little switch */
+.vui-switch[aria-checked] .vui-track{width:26px;height:15px;border-radius:9px;background:#ffffff26;position:relative;transition:background .15s}
+.vui-switch .vui-track::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#c9ced8;transition:transform .15s}
+.vui-switch[aria-checked=true] .vui-track{background:var(--accent)}
+.vui-switch[aria-checked=true] .vui-track::after{transform:translateX(11px);background:#fff}
+/* dropdown menu (Color) and the Points panel */
+.vui-pop{position:fixed;z-index:4;top:calc(max(14px,env(safe-area-inset-top)) + 44px);background:#0e1424f5;border:1px solid #ffffff22;border-radius:14px;padding:6px;box-shadow:0 12px 30px #0008}
+.vui-pop[hidden]{display:none}
+.vui-menu{display:flex;flex-direction:column;min-width:170px}
+.vui-menu button{border:0;background:transparent;border-radius:9px;justify-content:space-between;min-height:34px}
+.vui-menu button:hover{background:#ffffff12}
+.vui-menu button[aria-checked=true]{background:#ffffff1a}
+.vui-menu button[aria-checked=true]::after{content:"✓";color:var(--accent)}
+.vui-menu small{color:var(--muted);font-size:11px}
+.vui-panel{padding:12px 14px;display:grid;grid-template-columns:auto auto;gap:9px 14px;align-items:center}
 .vui-panel label{color:var(--muted)}
-.vui-panel .vui-row{display:flex;gap:6px;flex-wrap:wrap}
-.vui-panel button{min-height:36px;padding:0 12px;font-size:13px}
-.vui-panel input[type=range]{width:170px;accent-color:var(--accent)}
-.vui-clean .vui{display:none}
+.vui-panel .vui-row{display:flex;gap:5px;flex-wrap:wrap}
+.vui-panel button{min-height:32px;padding:0 11px;font-size:12px}
+.vui-panel input[type=range]{width:160px;accent-color:var(--accent)}
+
+/* title + info, bottom left */
+.vui-title{position:fixed;z-index:2;left:22px;bottom:max(18px,env(safe-area-inset-bottom));max-width:min(440px,70vw);pointer-events:none;text-shadow:0 1px 3px #000c}
+.vui-title h1{font-size:15px;font-weight:500;letter-spacing:.01em;margin:0;display:flex;align-items:center;gap:8px}
+.vui-title h1 span{color:var(--muted);font-weight:400}
+.vui-title p{margin:2px 0 0;font-size:11px;color:var(--muted)}
+.vui-info{position:relative;pointer-events:auto}
+.vui-info>button{width:22px;min-height:22px;height:22px;padding:0;justify-content:center;border-radius:50%;font-size:12px;font-style:italic;font-family:Georgia,serif}
+.vui-tip{position:absolute;left:-6px;bottom:30px;width:max-content;max-width:min(340px,80vw);background:#0e1424f5;border:1px solid #ffffff22;border-radius:12px;padding:10px 12px;font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-shadow:none;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .15s,transform .15s}
+.vui-tip p{margin:3px 0}
+.vui-tip p:first-child{color:var(--ink)}
+.vui-info:hover .vui-tip,.vui-info:focus-within .vui-tip,.vui-info.open .vui-tip{opacity:1;visibility:visible;transform:none}
+
+.vui-clean .vui{display:none!important}
 @media(max-width:600px){
-  .vui-header{padding-left:18px;padding-right:18px;max-width:none}
-  .vui-header h1{margin-top:20px;font-size:28px}
-  .vui-top{top:auto;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 120px);left:18px;right:18px;max-width:none;justify-content:flex-start}
-  .vui-top button{min-height:38px;font-size:13px;padding:0 12px}
-  .vui-bottom{left:18px;right:18px;flex-direction:column;align-items:start;gap:12px}
-  .vui-caption{max-width:280px;font-size:10px}
-  .vui-actions{align-self:flex-end}
-  .vui-actions button{padding:0 13px}
-  .vui-panel{left:18px;right:18px;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 176px)}
+  .vui-back{left:16px}
+  .vui-bar{top:calc(max(14px,env(safe-area-inset-top)) + 26px);left:12px;right:12px;max-width:none;justify-content:flex-start}
+  .vui button{min-height:34px;padding:0 11px}
+  .vui-icon{width:34px;padding:0}
+  .vui-pop{left:12px;right:12px;top:calc(max(14px,env(safe-area-inset-top)) + 110px)}
+  .vui-menu{min-width:0}
+  .vui-title{left:16px;bottom:max(16px,env(safe-area-inset-bottom))}
 }
