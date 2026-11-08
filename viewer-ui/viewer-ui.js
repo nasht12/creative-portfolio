@@ -142,7 +142,22 @@ export function mountViewerUI(o) {
     el('h1', {}, el('span', {text: place || ''}), kind ? el('span', {text: '/ ' + kind}) : null, info), sub);
   title.querySelector('h1 span').style.color = 'var(--ink)';
 
-  const back = o.back ? el('a', {class: 'vui vui-back', href: o.back.href, text: '← ' + (o.back.label || 'LiDAR studies')}) : null;
+  // back returns wherever the visitor came from on this site (the city viewer, the studies page at
+  // the tab they were on, another viewer), through history so that page comes back as it was left.
+  // Opened straight from a link elsewhere, it falls back to the page's own back link.
+  let ref = ''; try { ref = document.referrer; } catch (e) {}
+  let from = null; try { from = ref && new URL(ref); } catch (e) {}
+  const came = from && from.origin === location.origin && from.pathname !== location.pathname && history.length > 1;
+  const fromCity = came && /\/lidar-viewer\//.test(from.pathname);
+  const label = !came ? (o.back && o.back.label) || 'LiDAR studies' : fromCity ? 'Seattle'
+    : /lidar-studies/.test(from.pathname) ? 'LiDAR studies' : 'Back';
+  const back = o.back ? el('a', {class: 'vui vui-back', href: came ? ref : o.back.href, text: '← ' + label}) : null;
+  if (back && came) back.addEventListener('click', e => { if (!e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); history.back(); } });
+  if (fromCity) {
+    const veil = el('div', {class: 'vui-veil'});
+    document.body.appendChild(veil);
+    requestAnimationFrame(() => requestAnimationFrame(() => { veil.style.opacity = 0; setTimeout(() => veil.remove(), 900); }));
+  }
   document.body.append(...[back, bar, ...layer, title].filter(Boolean));
   if (hp.has('clean')) document.body.classList.add('vui-clean');
 

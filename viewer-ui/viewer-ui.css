@@ -52,6 +52,7 @@
 .vui-tip p:first-child{color:var(--ink)}
 .vui-info:hover .vui-tip,.vui-info:focus-within .vui-tip,.vui-info.open .vui-tip{opacity:1;visibility:visible;transform:none}
 
+.vui-veil{position:fixed;inset:0;z-index:9;background:#05070c;pointer-events:none;transition:opacity .8s ease}
 .vui-clean .vui{display:none!important}
 @media(max-width:600px){
   .vui-back{left:16px}

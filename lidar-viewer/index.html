@@ -106,6 +106,8 @@ css.textContent = `.spot-pin{position:fixed;z-index:1;width:9px;height:9px;margi
 .spot-pin.on{transform:scale(1.5)}.spot-pin[hidden]{display:none}
 #spot-tip{position:fixed;z-index:2;transform:translate(-50%,calc(-100% - 14px));background:#0e1424f2;border:1px solid #ffd48a66;border-radius:12px;padding:6px 11px;font:13px/1.35 system-ui,sans-serif;white-space:nowrap;pointer-events:auto}
 #spot-tip a{color:#ece9e2;text-decoration:none}
+#spot-fade{position:fixed;inset:0;z-index:6;background:#05070c;opacity:0;pointer-events:none;transition:opacity .45s}
+.spot-flying .spot-pin,.spot-flying .vui-bar{opacity:0;pointer-events:none}
 #spot-tip small{display:block;color:#e6b77a;font-size:11px}#spot-tip[hidden]{display:none}
 .vui-clean .spot-pin,.vui-clean #spot-tip{display:none!important}`;
 document.head.appendChild(css);
@@ -118,7 +120,7 @@ spots.forEach(s => {
   s.pin = Object.assign(document.createElement('div'), {className: 'spot-pin', title: s.label});
   s.pin.addEventListener('pointerenter', () => setHover(s));
   s.pin.addEventListener('pointerleave', () => setHover(null));
-  s.pin.addEventListener('click', () => { location.href = s.url; });
+  s.pin.addEventListener('click', () => go(s));
   document.body.appendChild(s.pin);
 });
 let hover = null;
@@ -144,7 +146,7 @@ function setHover(s) {
   mat.uniforms.uHover.value = s ? s.id : 0;
   renderer.domElement.style.cursor = s ? 'pointer' : '';
   tip.hidden = !s;
-  if (s) { s.pin.classList.add('on'); tipA.href = s.url; tipA.innerHTML = s.label + '<small>Open its 3D view \u2197</small>'; placeTip(); }
+  if (s && !flying) { s.pin.classList.add('on'); tipA.href = s.url; tipA.innerHTML = s.label + '<small>Open its 3D view \u2197</small>'; placeTip(); }
 }
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), hit = new THREE.Vector3();
 function pick(e) {   // the nearest hotspot box under the pointer
@@ -162,9 +164,78 @@ cv.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
 cv.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
   const s = pick(e);
-  if (s && (e.pointerType === 'mouse' || s === hover)) location.href = s.url;
+  if (s && (e.pointerType === 'mouse' || s === hover)) go(s);
   else setHover(s);
 });
+tipA.addEventListener('click', e => { if (hover) { e.preventDefault(); go(hover); } });
+
+// ---- opening a hotspot: the camera eases in to the exact angle that viewer opens at while its
+// data loads in the background, the screen fades, and the page changes. Back again, it flies out.
+const fade = Object.assign(document.createElement('div'), {id: 'spot-fade'});
+document.body.appendChild(fade);
+const D2R = Math.PI / 180, TAN = Math.tan(camera.fov / 2 * D2R);
+function viewOf(s) {
+  const c = s.box.getCenter(new THREE.Vector3()), d = s.box.getSize(new THREE.Vector3());
+  if (s.view) {   // canopy viewer: 46 deg lens, a fixed bearing, height = distance x elev
+    const v = s.view, f = Math.tan(23 * D2R), dist = Math.max(v.dist, v.fit / (f * Math.min(camera.aspect, 1))) * f / TAN;
+    const t = new THREE.Vector3(c.x, s.box.min.y + v.targetY, c.z);
+    return {t, p: new THREE.Vector3(t.x + Math.sin(2.705) * dist, t.y + dist * v.elev, t.z + Math.cos(2.705) * dist)};
+  }
+  // landmark viewer: 42 deg lens, from 210 deg (south-southwest) and 18 deg up, 2.4 x the subject
+  const ext = Math.max(d.x, d.y, d.z), dist = ext * 2.4 * Math.tan(21 * D2R) / TAN, az = 210 * D2R, el = 18 * D2R;
+  return {t: c, p: new THREE.Vector3(c.x + dist * Math.sin(az) * Math.cos(el), c.y + dist * Math.sin(el), c.z - dist * Math.cos(az) * Math.cos(el))};
+}
+let flying = false;
+function fly(a, b, ms) {   // orbit-style path: target slides, bearing turns, distance shrinks evenly in log
+  return new Promise(done => {
+    flying = true; controls.enabled = false; controls.autoRotate = false;
+    const s0 = new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)), s1 = new THREE.Spherical().setFromVector3(b.p.clone().sub(b.t));
+    let dth = s1.theta - s0.theta; dth -= Math.round(dth / (2 * Math.PI)) * 2 * Math.PI;
+    const sp = new THREE.Spherical(), t0 = performance.now();
+    (function step(now) {
+      const k = Math.min((now - t0) / ms, 1), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      controls.target.lerpVectors(a.t, b.t, e);
+      sp.set(Math.exp(Math.log(s0.radius) * (1 - e) + Math.log(s1.radius) * e), s0.phi + (s1.phi - s0.phi) * e, s0.theta + dth * e);
+      camera.position.setFromSpherical(sp).add(controls.target);
+      camera.lookAt(controls.target);
+      placeTip();
+      if (k < 1) requestAnimationFrame(step);
+      else { flying = false; controls.enabled = true; controls.update(); placePins(); done(); }
+    })(t0);
+  });
+}
+const store = (k, v) => { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const recall = k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } };
+async function go(s) {
+  if (flying) return;
+  setHover(s);
+  tipA.innerHTML = s.label + '<small>Opening its 3D view\u2026</small>';
+  document.body.classList.add('spot-flying');
+  store('lidarCity', {id: s.id, cam: camera.position.toArray(), target: controls.target.toArray()});
+  const base = new URL(s.url, location.href);   // warm the cache, so the next page opens at once
+  const load = Promise.all(['', 'points.json', 'points.bin'].map(f => fetch(new URL(f, base)).then(r => r.arrayBuffer()).catch(() => null)));
+  await fly({p: camera.position.clone(), t: controls.target.clone()}, viewOf(s), 2400);
+  await Promise.race([load, new Promise(r => setTimeout(r, 8000))]);
+  fade.style.opacity = 1;
+  await new Promise(r => setTimeout(r, 450));
+  location.href = s.url;
+}
+function comeBack(any) {   // returning from a hotspot's viewer: start at its angle and fly back out
+  const st = recall('lidarCity'), s = st && spots.find(x => x.id === st.id);
+  store('lidarCity');
+  document.body.classList.remove('spot-flying');
+  let ref = '', nav = ''; try { ref = document.referrer; nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
+  // a fresh load from that viewer's back link, or a history step back (where the referrer is stale)
+  if (!s || !(any || nav === 'back_forward' || ref.includes(new URL(s.url, location.href).pathname))) { fade.style.opacity = 0; return; }
+  const v = viewOf(s);
+  camera.position.copy(v.p); controls.target.copy(v.t);
+  fade.style.transition = 'none'; fade.style.opacity = 1; fade.offsetWidth; fade.style.transition = ''; fade.style.opacity = 0;
+  setHover(s);
+  fly(v, {p: new THREE.Vector3(...st.cam), t: new THREE.Vector3(...st.target)}, 2000).then(() => setHover(null));
+}
+addEventListener('pageshow', e => { if (e.persisted) comeBack(true); });   // the browser's back button
+{ const t0 = performance.now();   // after the shared controls mount (they set the spin and the view)
+  (function wait() { if (document.querySelector('.vui-bar') || performance.now() - t0 > 4000) comeBack(false); else requestAnimationFrame(wait); })(); }
 controls.addEventListener('change', placePins);
 addEventListener('resize', placePins);
 placePins();
