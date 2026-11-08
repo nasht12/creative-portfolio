@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050810">
+<title>Pioneer Square in LiDAR — Abhinash Tummala</title>
+<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css">
+<style>
+html,body{margin:0;height:100%;background:#06080e;color:#ece9e2;font:14px/1.5 system-ui,sans-serif;overflow:hidden}canvas{display:block}
+#status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);color:#c0bbce;background:#0e1424ed;padding:16px 20px;border-radius:14px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="status" role="status">Loading 81,182 points&hellip;</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mountViewerUI} from '../../viewer-ui/viewer-ui.js';
+THREE.ColorManagement.enabled = false;
+const status = document.getElementById('status');
+const meta = await (await fetch('points.json')).json();
+const buf = await (await fetch('points.bin')).arrayBuffer();
+const n = meta.count;
+const q = new Uint16Array(buf, 0, n * 3);
+const cols = [0, 1, 2].map(k => new Uint8Array(buf, n * (6 + 3 * k), n * 3));
+const sub = new Uint8Array(buf, n * 15, n);
+const [sx, sy, sz] = meta.scale, [ox, oy, oz] = meta.offset;
+const pos = new Float32Array(n * 3), flag = new Float32Array(n);
+for (let i = 0; i < n; i++) {  // data: x east, y north, z up -> three.js: y up, -z north
+  pos[3 * i] = q[3 * i] * sx + ox;
+  pos[3 * i + 1] = q[3 * i + 2] * sz + oz;
+  pos[3 * i + 2] = -(q[3 * i + 1] * sy + oy);
+  flag[i] = sub[i];
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+['c0', 'c1', 'c2'].forEach((a, k) => geo.setAttribute(a, new THREE.BufferAttribute(cols[k], 3, true)));
+geo.setAttribute('sub', new THREE.BufferAttribute(flag, 1));
+const rnd = new Float32Array(n);
+for (let i = 0, s = 7; i < n; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; rnd[i] = s / 0x7fffffff; }
+geo.setAttribute('rnd', new THREE.BufferAttribute(rnd, 1));
+const mat = new THREE.ShaderMaterial({
+  uniforms: {look: {value: 0}, scale: {value: 1}, size: {value: meta.size}, city: {value: 1},
+             sizeMul: {value: 1}, shape: {value: 0}, keep: {value: 1},
+             light: {value: 0}, lphase: {value: 0.5}, lmin: {value: -0.05 * (meta.height || 300)}, lspan: {value: 1.1 * (meta.height || 300)}},
+  vertexShader: `
+    attribute vec3 c0, c1, c2; attribute float sub, rnd;
+    uniform float look, scale, size, city, sizeMul, shape, keep, light, lphase, lmin, lspan;
+    varying vec3 vCol; varying float vHide;
+    void main() {
+      vHide = ((sub < 0.5 && city < 0.5) || rnd > keep) ? 1.0 : 0.0;
+      vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : c2);
+      float frost = look > 0.5 && look < 1.5 ? 1.0 : 0.0;
+      if (sub < 0.5) c = c * mix(0.32, 0.22, frost) + vec3(0.03, 0.045, 0.08) * (1.0 - frost);
+      vec3 color = c * mix(1.0, mix(0.35, 0.8, sub), frost);
+  // passing light (from the forest-effects-lab study): a thin plane sweeps the scene every 12 s;
+  // points light up as it passes and leave a fading trail; the rest stays visible at 45%
+  if(light>.5){float plane=lmin-lspan*.12+lspan*1.24*lphase;float d=position.y-plane;float w=lspan*.03;
+    float band=exp(-d*d/(w*w));float trail=d<0.?exp(d/(lspan*.15)):0.;
+    color=mix(color,vec3(.48,1.,1.),band*.42)*(.45+band*1.0+trail*.3);}
+      vCol = color;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mv;
+      // thinner clouds get slightly bigger points so they don't vanish; soft dots need room to fade
+      float s = size * sizeMul * mix(1.0, 0.7, frost) * mix(0.8, 1.0, sub) * inversesqrt(max(keep, 0.1))
+              * (shape > 0.5 && shape < 1.5 ? 1.7 : 1.0);
+      gl_PointSize = clamp(s * scale / -mv.z, 1.0, 48.0);
+    }`,
+  fragmentShader: `
+    uniform float shape;
+    varying vec3 vCol; varying float vHide;
+    void main() {
+      if (vHide > 0.5) discard;
+      vec2 d = gl_PointCoord - 0.5;
+      float r2 = dot(d, d) * 4.0;          // 0 at the centre, 1 at the edge
+      float a = 1.0;
+      if (shape < 0.5) { if (r2 > 1.0) discard; }
+      else if (shape < 1.5) { if (r2 > 1.0) discard; a = exp(-r2 * 3.5); }
+      gl_FragColor = vec4(vCol, a);
+    }`,
+});
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x06080e);
+scene.add(new THREE.Points(geo, mat));
+const camera = new THREE.PerspectiveCamera(42, 1, 1, 20000);
+const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.domElement.style.touchAction = 'none';
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+controls.maxDistance = meta.maxDistance;
+camera.position.fromArray(meta.camera);
+controls.target.fromArray(meta.target);
+const resize = () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  mat.uniforms.scale.value = innerHeight * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+};
+addEventListener('resize', resize);
+resize();
+const reset = () => { camera.position.fromArray(meta.camera); controls.target.fromArray(meta.target); controls.update(); };
+// ---- controls: the shared viewer UI (same layout, words and URL keys in every LiDAR viewer)
+const LOOKN = {sun: 0, frost: 1, height: 2};
+const blend = () => {
+  const frost = mat.uniforms.look.value === 1, soft = mat.uniforms.shape.value === 1;
+  // frost adds light where points pile up; soft dots fade at the edge, so both blend
+  mat.blending = frost ? THREE.AdditiveBlending : THREE.NormalBlending;
+  mat.depthWrite = !(frost || soft); mat.transparent = frost || soft; mat.needsUpdate = true;
+};
+let lightOn = false, last = 0;
+mountViewerUI({
+  back: {href: '../../lidar-studies.html#landmarks'}, title: 'Pioneer Square',
+  subtitle: 'Seattle · 81,182 points in the block · 91 ft tall',
+  notes: ['King County West 2021 LiDAR · every scanned point, the city around it faint'],
+  colors: [{key: 'height', label: 'Height'}, {key: 'sun', label: 'Sun'}, {key: 'frost', label: 'Frost'}], color: 'sun',
+  onColor: k => { mat.uniforms.look.value = LOOKN[k]; blend(); },
+  onSurroundings: v => { mat.uniforms.city.value = v ? 1 : 0; }, surroundingsTitle: 'Show or hide the city around the landmark',
+  onSize: v => { mat.uniforms.sizeMul.value = v; }, onShape: i => { mat.uniforms.shape.value = i; blend(); },
+  onDensity: v => { mat.uniforms.keep.value = v; },
+  onLight: v => { lightOn = v; mat.uniforms.light.value = v ? 1 : 0; },
+  effects: {spin: {default: true}}, camera, controls, reset,
+});
+status.remove();
+renderer.setAnimationLoop(now => {
+  const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
+  if (lightOn) { const u = mat.uniforms; u.lphase.value = (u.lphase.value + dt / 12) % 1; }
+  controls.update(); renderer.render(scene, camera);
+});
+</script></body></html>
