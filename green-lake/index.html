@@ -14,12 +14,12 @@ if(!response.ok)throw Error('Point data unavailable');const buffer=await respons
 const n=meta.count,packed=new Uint16Array(buffer,0,n*3),hb=new Uint8Array(buffer,n*6,n),ib=new Uint8Array(buffer,n*7,n),fb=new Uint8Array(buffer,n*8,n);
 const positions=new Float32Array(n*3),flags=new Float32Array(n),rnd=new Float32Array(n);
 for(let i=0,s=7;i<n;i++){for(let k=0;k<3;k++)positions[i*3+k]=packed[i*3+k]/65535*meta.span[k]+meta.min[k];flags[i]=fb[i];s=(s*1103515245+12345)&0x7fffffff;rnd[i]=s/0x7fffffff}
-const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('hgt',new THREE.BufferAttribute(hb,1,true));geometry.setAttribute('inten',new THREE.BufferAttribute(ib,1,true));geometry.setAttribute('flags',new THREE.BufferAttribute(flags,1));geometry.setAttribute('rnd',new THREE.BufferAttribute(rnd,1));geometry.computeBoundingSphere();
+const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('hgt',new THREE.BufferAttribute(hb,1,true));geometry.setAttribute('inten',new THREE.BufferAttribute(ib,1,true));geometry.setAttribute('flags',new THREE.BufferAttribute(flags,1));geometry.setAttribute('rnd',new THREE.BufferAttribute(rnd,1));geometry.setAttribute('c3',new THREE.BufferAttribute(new Uint8Array(n*3),3,true));geometry.computeBoundingSphere();
 const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0x050810);renderer.domElement.setAttribute('aria-label','Interactive 3D Green Lake canopy. Drag to rotate and pinch to zoom.');renderer.domElement.setAttribute('role','img');document.body.prepend(renderer.domElement);document.getElementById('poster').hidden=true;
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=meta.view.dist*.02;controls.maxDistance=meta.span[0]*3;controls.maxPolarAngle=Math.PI*.59;controls.screenSpacePanning=true;controls.autoRotateSpeed=.6;
 const U={light:{value:0},lphase:{value:.5},lmin:{value:meta.min[0]},lspan:{value:meta.span[0]},time:{value:0},breathe:{value:1},unit:{value:meta.units==='ft'?3.28:1},psize:{value:meta.pointSize||.6},pixels:{value:1},look:{value:0},city:{value:1},sizeMul:{value:1},shape:{value:0},keep:{value:1}};
 // Height: the luminous palette. Sun: warm where the sun reaches, blue in shadow. Frost: glacier ramp, canopy whitened.
-const vertexShader=`attribute float hgt,inten,flags,rnd; varying vec3 color; varying float hide;
+const vertexShader=`attribute float hgt,inten,flags,rnd; attribute vec3 c3; varying vec3 color; varying float hide;
 uniform float pixels,glow,look,city,sizeMul,shape,keep,psize,time,breathe,unit,light,lphase,lmin,lspan;
 float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
 vec3 palette(float t){vec3 a=vec3(.11,.17,.34),b=vec3(.22,.28,.65),c=vec3(.66,.20,.85),d=vec3(1.,.36,.48),e=vec3(1.,.72,.33),f=vec3(.55,1.,.90);float s=clamp(t,0.,1.)*5.;if(s<1.)return mix(a,b,s);if(s<2.)return mix(b,c,s-1.);if(s<3.)return mix(c,d,s-2.);if(s<4.)return mix(d,e,s-3.);return mix(e,f,s-4.);}
@@ -30,6 +30,7 @@ void main(){
   vec3 c;
   if(look<.5){c=palette(hgt);}
   else if(look<1.5){c=lit>.5?mix(vec3(1.,.70,.42),vec3(1.,.945,.84),hgt):vec3(.17,.25,.45)+.12*hgt;if(tree<.5)c*=.6;}
+  else if(look>2.5){c=c3;if(tree<.5)c*=.8;}
   else{c=glacier(pow(hgt,.65))*(.75+.45*inten);c=mix(c,vec3(.92,.98,1.),.55*canopy);if(tree<.5)c*=.45;c*=.45;}
   color=c;
   // breathing (Arboretum): the canopy drifts out and back on a 12 s cycle, the ground stays put
@@ -61,11 +62,14 @@ function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWi
 function reset(){const v=meta.view,target=new THREE.Vector3(0,v.targetY,0),distance=Math.max(v.dist,v.fit/(Math.tan(THREE.MathUtils.degToRad(23))*Math.min(camera.aspect,1)));camera.position.set(Math.sin(2.705)*distance,v.targetY+distance*v.elev,Math.cos(2.705)*distance);controls.target.copy(target);controls.update();wake()}
 addEventListener('resize',resize);resize();reset();
 // ---- controls: the shared viewer UI (same layout, words and URL keys in every LiDAR viewer)
-let glowOn=true;const LOOKN={height:0,sun:1,frost:2};
-function blend(){const frost=U.look.value===2,soft=U.shape.value===1;core.blending=frost?THREE.AdditiveBlending:THREE.NormalBlending;core.transparent=frost||soft;core.depthWrite=!(frost||soft);core.needsUpdate=true;haloPts.visible=glowOn&&!frost;wake()}
+let glowOn=true;const LOOKN={height:0,sun:1,frost:2,photo:3};
+// true colour lives in its own file, fetched the first time a visitor picks it
+let photoReady=null,wantLook='height';const loadPhoto=()=>photoReady||(photoReady=fetch('photo.bin').then(r=>{if(!r.ok)throw Error('photo');return r.arrayBuffer()}).then(b=>{const a=geometry.getAttribute('c3');a.array.set(new Uint8Array(b,0,n*3));a.needsUpdate=true}));
+function setLook(k){wantLook=k;if(k!=='photo'){U.look.value=LOOKN[k];blend();return}loadPhoto().then(()=>{if(wantLook==='photo'){U.look.value=3;blend()}})}
+function blend(){const frost=U.look.value===2,soft=U.shape.value===1;core.blending=frost?THREE.AdditiveBlending:THREE.NormalBlending;core.transparent=frost||soft;core.depthWrite=!(frost||soft);core.needsUpdate=true;haloPts.visible=glowOn&&U.look.value<2;wake()}
 mountViewerUI({back:{href:'../lidar-studies.html#seattle'},title:'Green Lake / Luminous canopy',subtitle:`Seattle · ${n.toLocaleString()} laser returns · ${meta.trees.toLocaleString()} in the trees`,
-  notes:['King County West 2021 LiDAR · Height, sun and frost colors from the scan'],
-  colors:[{key:'height',label:'Height'},{key:'sun',label:'Sun'},{key:'frost',label:'Frost'}],color:'height',onColor:k=>{U.look.value=LOOKN[k];blend()},
+  notes:['King County West 2021 LiDAR · Height, sun and frost colors from the scan'].concat(meta.photo?['True colour: USDA NAIP aerial photo, Oct 2023']:[]),
+  colors:[{key:'height',label:'Height'},{key:'sun',label:'Sun'},{key:'frost',label:'Frost'}].concat(meta.photo?[{key:'photo',label:'True colour'}]:[]),color:'height',onColor:setLook,
   onSurroundings:v=>{U.city.value=v?1:0},surroundingsTitle:'Show or hide everything that is not a tree',
   onSize:v=>{U.sizeMul.value=v},onShape:i=>{U.shape.value=i;blend()},onDensity:v=>{U.keep.value=v},onGlow:v=>{glowOn=v;blend()},
   onLight:v=>{lightOn=v;U.light.value=v?1:0;lightLast=0},onAlive:v=>{playing=v;lastTime=0;if(!v)U.time.value=0},

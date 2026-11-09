@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050810">
 <title>Space Needle in LiDAR — Abhinash Tummala</title>
-<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css"><script src="../../viewer-ui/viewer-ui-handoff.js"></script>
+<link rel="stylesheet" href="../../viewer-ui/viewer-ui.css">
+<script src="../../viewer-ui/viewer-ui-handoff.js"></script>
 <style>
 html,body{margin:0;height:100%;background:#06080e;color:#ece9e2;font:14px/1.5 system-ui,sans-serif;overflow:hidden}canvas{display:block}
 #status{position:fixed;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);color:#c0bbce;background:#0e1424ed;padding:16px 20px;border-radius:14px}
@@ -33,6 +34,7 @@ const geo = new THREE.BufferGeometry();
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 ['c0', 'c1', 'c2'].forEach((a, k) => geo.setAttribute(a, new THREE.BufferAttribute(cols[k], 3, true)));
 geo.setAttribute('sub', new THREE.BufferAttribute(flag, 1));
+geo.setAttribute('c3', new THREE.BufferAttribute(new Uint8Array(n * 3), 3, true));   // true colour, loaded on demand
 const rnd = new Float32Array(n);
 for (let i = 0, s = 7; i < n; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; rnd[i] = s / 0x7fffffff; }
 geo.setAttribute('rnd', new THREE.BufferAttribute(rnd, 1));
@@ -41,12 +43,12 @@ const mat = new THREE.ShaderMaterial({
              sizeMul: {value: 1}, shape: {value: 0}, keep: {value: 1},
              light: {value: 0}, lphase: {value: 0.5}, lmin: {value: -0.05 * (meta.height || 300)}, lspan: {value: 1.1 * (meta.height || 300)}},
   vertexShader: `
-    attribute vec3 c0, c1, c2; attribute float sub, rnd;
+    attribute vec3 c0, c1, c2, c3; attribute float sub, rnd;
     uniform float look, fromH, scale, size, city, sizeMul, shape, keep, light, lphase, lmin, lspan;
     varying vec3 vCol; varying float vHide;
     void main() {
       vHide = ((sub < 0.5 && city < 0.5) || rnd > keep) ? 1.0 : 0.0;
-      vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : c2);
+      vec3 c = look < 0.5 ? c0 : (look < 1.5 ? c1 : (look < 2.5 ? c2 : c3));
       if (look < 0.5 || look > 1.5) c = mix(c, c2, fromH);   // arriving from the city: its height colors first
       float frost = look > 0.5 && look < 1.5 ? 1.0 : 0.0;
       if (sub < 0.5) c = c * mix(0.32, 0.22, frost) + vec3(0.03, 0.045, 0.08) * (1.0 - frost);
@@ -102,7 +104,14 @@ addEventListener('resize', resize);
 resize();
 const reset = () => { camera.position.fromArray(meta.camera); controls.target.fromArray(meta.target); controls.update(); };
 // ---- controls: the shared viewer UI (same layout, words and URL keys in every LiDAR viewer)
-const LOOKN = {sun: 0, frost: 1, height: 2};
+const LOOKN = {sun: 0, frost: 1, height: 2, photo: 3};
+// true colour lives in its own file, fetched the first time a visitor picks it
+let photoReady = null;
+const loadPhoto = () => photoReady || (photoReady = fetch('photo.bin').then(r => r.arrayBuffer()).then(b => {
+  const a = geo.getAttribute('c3'); a.array.set(new Uint8Array(b, 0, n * 3)); a.needsUpdate = true; }));
+let wantLook = 'sun';
+const setLook = k => { wantLook = k; if (k !== 'photo') { mat.uniforms.look.value = LOOKN[k]; blend(); return; }
+  loadPhoto().then(() => { if (wantLook === 'photo') { mat.uniforms.look.value = 3; blend(); } }); };
 const blend = () => {
   const frost = mat.uniforms.look.value === 1, soft = mat.uniforms.shape.value === 1;
   // frost adds light where points pile up; soft dots fade at the edge, so both blend
@@ -120,9 +129,11 @@ if (window.__vuiHandoff && window.__vuiHandoff.offset) {
 mountViewerUI({
   back: {href: '../../lidar-studies.html#landmarks'}, title: 'Space Needle',
   subtitle: 'Seattle · 28,227 points on the landmark · 563 ft tall',
-  notes: ['King County West 2021 LiDAR · every scanned point, the city around it faint'],
-  colors: [{key: 'height', label: 'Height'}, {key: 'sun', label: 'Sun'}, {key: 'frost', label: 'Frost'}], color: 'sun',
-  onColor: k => { mat.uniforms.look.value = LOOKN[k]; blend(); },
+  notes: ['King County West 2021 LiDAR · every scanned point, the city around it faint']
+    .concat(meta.photo ? ['True colour: USDA NAIP aerial photo, Oct 2023 (towers lean in the photo)'] : []),
+  colors: [{key: 'height', label: 'Height'}, {key: 'sun', label: 'Sun'}, {key: 'frost', label: 'Frost'}]
+    .concat(meta.photo ? [{key: 'photo', label: 'True colour'}] : []), color: 'sun',
+  onColor: setLook,
   onSurroundings: v => { mat.uniforms.city.value = v ? 1 : 0; }, surroundingsTitle: 'Show or hide the city around the landmark',
   onSize: v => { mat.uniforms.sizeMul.value = v; }, onShape: i => { mat.uniforms.shape.value = i; blend(); },
   onDensity: v => { mat.uniforms.keep.value = v; },

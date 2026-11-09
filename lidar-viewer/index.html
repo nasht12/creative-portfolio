@@ -37,12 +37,13 @@ geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('acol', new THREE.BufferAttribute(col, 3, true));
 geo.setAttribute('asize', new THREE.BufferAttribute(size, 1));
 geo.setAttribute('hid', new THREE.BufferAttribute(meta.hotspots ? new Uint8Array(buf, n * 10, n) : new Uint8Array(n), 1));
+geo.setAttribute('pcol', new THREE.BufferAttribute(new Uint8Array(n * 3), 3, true));   // true colour, fetched on demand
 const bg = new THREE.Color(0x05070c);
 const mat = new THREE.ShaderMaterial({
-  uniforms: {uHover: {value: 0}, uIso: {value: 0}, uBoxMin: {value: new THREE.Vector3()}, uBoxMax: {value: new THREE.Vector3()}, uReach: {value: 300},
+  uniforms: {uPhoto: {value: 0}, uHover: {value: 0}, uIso: {value: 0}, uBoxMin: {value: new THREE.Vector3()}, uBoxMax: {value: new THREE.Vector3()}, uReach: {value: 300},
              scale: {value: 1}, minPx: {value: 1.2}, fogColor: {value: bg}, fogNear: {value: 16000}, fogFar: {value: 48000}},
   vertexShader: `
-    attribute vec3 acol; attribute float asize; attribute float hid; uniform float uHover, uIso, uReach; uniform vec3 uBoxMin, uBoxMax;
+    attribute vec3 acol, pcol; attribute float asize; attribute float hid; uniform float uHover, uIso, uReach, uPhoto; uniform vec3 uBoxMin, uBoxMax;
     uniform float light, lphase, lmin, lspan, uSize, uShape, uKeep;
     attribute float rnd;
     uniform float scale, minPx; varying vec3 vCol; varying float vDepth;
@@ -51,7 +52,7 @@ const mat = new THREE.ShaderMaterial({
       gl_Position = projectionMatrix * mv;
       vDepth = -mv.z;
       gl_PointSize = clamp(asize * uSize * inversesqrt(max(uKeep, 0.1)) * (uShape > 0.5 && uShape < 1.5 ? 1.7 : 1.0) * scale / vDepth, minPx, 48.0);
-      vCol = acol;
+      vCol = mix(acol, pcol, uPhoto);
       // a hotspot is hovered: it brightens, everything else steps back. Flying in to it (uIso 0 -> 1)
       // it settles to its own colors and the city around it dims and thins out the way its viewer shows it
       if (uHover > 0.5) {
@@ -80,6 +81,15 @@ const mat = new THREE.ShaderMaterial({
       gl_FragColor = vec4(mix(vCol, fogColor, smoothstep(fogNear, fogFar, vDepth)), a);
     }`,
 });
+// Color: Height (acol) or True colour, the aerial photo under each point, in photo.bin (fetched once, when picked)
+let photoReady = null, wantColor = 'height';
+window.__setColor = k => {
+  wantColor = k;
+  if (k !== 'photo') { mat.uniforms.uPhoto.value = 0; return; }
+  photoReady = photoReady || fetch('photo.bin').then(r => r.arrayBuffer()).then(b => {
+    const a = geo.getAttribute('pcol'); a.array.set(new Uint8Array(b, 0, n * 3)); a.needsUpdate = true; });
+  photoReady.then(() => { if (wantColor === 'photo') mat.uniforms.uPhoto.value = 1; });
+};
 const scene = new THREE.Scene();
 scene.background = bg;
 scene.add(new THREE.Points(geo, mat));
@@ -322,7 +332,8 @@ window.__viewer = {n, ready: true, camera, controls, renderer, scene, mat};
   window.__lightOn = false;
   const {mountViewerUI} = await import('../viewer-ui/viewer-ui.js');
   mountViewerUI({
-    back: {href: '../lidar-studies.html#seattle'}, title: 'Seattle / City point cloud', subtitle: `Seattle · ${n.toLocaleString()} laser returns · water removed`, notes: ['King County West 2021 LiDAR · colored by height above ground', 'Glowing dots mark places with their own 3D view: hover to light one up, click to open it'],
+    back: {href: '../lidar-studies.html#seattle'}, title: 'Seattle / City point cloud', subtitle: `Seattle · ${n.toLocaleString()} laser returns · water removed`, notes: ['King County West 2021 LiDAR · colored by height above ground', 'Glowing dots mark places with their own 3D view: hover to light one up, click to open it', 'True colour: USDA NAIP aerial photo, Oct 2023 (towers lean in the photo)'],
+  colors: [{key: 'height', label: 'Height'}, {key: 'photo', label: 'True colour'}], color: 'height', onColor: k => window.__setColor(k),
     onSize: v => { mat.uniforms.uSize.value = v; },
     onShape: i => { mat.uniforms.uShape.value = i; const soft = i === 1; mat.transparent = soft; mat.depthWrite = !soft; mat.needsUpdate = true; },
     onDensity: v => { mat.uniforms.uKeep.value = v; },

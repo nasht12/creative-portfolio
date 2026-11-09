@@ -1,0 +1,2 @@
+# point data: never treat as text (autocrlf would rewrite CR/LF bytes)
+*.bin binary
