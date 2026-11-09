@@ -151,7 +151,10 @@ export function mountViewerUI(o) {
   const fromCity = came && /\/lidar-viewer\//.test(from.pathname);
   const label = !came ? (o.back && o.back.label) || 'LiDAR studies' : fromCity ? 'Seattle'
     : /lidar-studies/.test(from.pathname) ? 'LiDAR studies' : 'Back';
-  const back = o.back ? el('a', {class: 'vui vui-back', href: came ? ref : o.back.href, text: '← ' + label}) : null;
+  // embedded in the studies page (a tab per viewer), there's nowhere to go back to, except the city
+  // viewer when this page was flown into from it inside the same frame
+  let framed = false; try { framed = window.top !== window; } catch (e) { framed = true; }
+  const back = o.back && (!framed || fromCity) ? el('a', {class: 'vui vui-back', href: came ? ref : o.back.href, text: '← ' + label}) : null;
   if (back && came) back.addEventListener('click', e => {
     if (e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
