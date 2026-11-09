@@ -34,6 +34,7 @@
     "description": "Seattle and Mount Rainier reconstructed from LiDAR: height-colored point clouds, angled city models, and shaded relief. Studies in translating elevation and laser-scan data into readable visual landscapes.",
     "image": "media/lidar-studies/point-cloud.webp",
     "url": "lidar-studies.html",
+    "direct": true,
     "category": "Map-based applications",
     "categoryDescription": "Geospatial interfaces & data exploration",
     "note": "Selected outputs from relief-renderer · King County West 2021 and Rainier Wali 2022 LiDAR, accessed through the Washington Lidar Portal."

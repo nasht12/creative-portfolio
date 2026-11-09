@@ -19,6 +19,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 .embed{position:relative;height:620px;min-height:420px;border-radius:6px;overflow:hidden;background:#05070c}.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}.embed[hidden]{display:none}.embed-note{font-size:14px;color:#55534d;line-height:1.6;margin:12px 0 40px}.embed-note a{color:inherit;white-space:nowrap;margin-left:6px}.gal-h{font:11px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#55534d;font-weight:400;margin:56px 0 18px;padding-top:14px;border-top:1px solid #aaa69b80;scroll-margin-top:200px}.gal-h:first-child{margin-top:0}@media(max-width:600px){.embed{margin-left:-5vw;margin-right:-5vw;border-radius:0}}
 /* tab bar: docks exactly under the fixed header, solid and full-bleed so nothing shows at its edges; while a 3D viewer is open it scrolls with the page instead, so it never sits on the viewer */.lidar-main{--hdr:72px}.tabbar{top:var(--hdr);background:#e7e3da;box-shadow:0 0 0 100vmax #e7e3da;clip-path:inset(0 -100vmax);border-bottom:0;border-image:linear-gradient(#aaa69b80 0 0) 0 0 1 0/0 0 1px 0/0 100vmax}.viewing .tabbar{position:relative;top:auto}.content-page header{background:#e7e3da}.tabs.sub button{white-space:nowrap}@media(max-width:900px){.study figcaption strong{white-space:normal}}.gal-h{scroll-margin-top:calc(var(--hdr) + 140px)}@media(max-width:600px){.tabbar{top:var(--hdr)}.tabs.sub{flex-wrap:nowrap;overflow-x:auto}}
 </style></head><body class="content-page"><a class="skip-link" href="#content">Skip to content</a><header><a class="wordmark" href="index.html">ABHINASH TUMMALA</a><nav aria-label="Main navigation"><a href="index.html">Work</a><a href="about.html">About</a></nav></header><main class="lidar-main" id="content"><h1>Washington in LiDAR.</h1>
+<p class="lead">Seattle and Mount Rainier reconstructed from LiDAR: height-colored point clouds, angled city models, and shaded relief. Studies in translating elevation and laser-scan data into readable visual landscapes.</p>
 
 <div class="tabbar">
 <div class="tabs" role="tablist" aria-label="Areas">
@@ -248,7 +249,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
   };
   const pick = id => {
     history.replaceState(null, '', '#' + id); show(id);
-    const h1 = bar.previousElementSibling;   // the bar's own offset moves while it is stuck, so measure from the heading
+    const h1 = bar.previousElementSibling;   // the bar's own offset moves while it is stuck, so measure from the intro above it
     const y = h1.offsetTop + h1.offsetHeight + parseFloat(getComputedStyle(h1).marginBottom) - parseFloat(getComputedStyle(main).getPropertyValue('--hdr'));  // back to the top of the studies
     if (scrollY > y) scrollTo({top: y});
   };
