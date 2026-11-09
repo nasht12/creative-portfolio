@@ -16,7 +16,7 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 .lb button:hover{background:#ffffff2e}.lb-close{top:14px;right:16px}.lb-prev{left:16px;top:50%;transform:translateY(-50%)}.lb-next{right:16px;top:50%;transform:translateY(-50%)}
 .lb-count{position:absolute;top:26px;left:20px;color:#a9a69c;font:11px 'DM Mono',monospace;letter-spacing:.06em}
 @media(max-width:600px){.lb-stage{padding:56px 0 6px}.lb-prev,.lb-next{display:none!important}.lb-cap{padding:8px 18px 20px}.lb-cap span{display:block;margin:2px 0 0}}
-.embed{position:relative;height:620px;min-height:420px;border-radius:6px;overflow:hidden;background:#05070c}.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}.embed-note{font-size:14px;color:#55534d;line-height:1.6;margin:12px 0 40px}.embed-note a{color:inherit;white-space:nowrap;margin-left:6px}.gal-h{font:11px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#55534d;font-weight:400;margin:56px 0 18px;padding-top:14px;border-top:1px solid #aaa69b80;scroll-margin-top:200px}.gal-h:first-child{margin-top:0}@media(max-width:600px){.embed{margin-left:-5vw;margin-right:-5vw;border-radius:0}}
+.embed{position:relative;height:620px;min-height:420px;border-radius:6px;overflow:hidden;background:#05070c}.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}.embed[hidden]{display:none}.embed-note{font-size:14px;color:#55534d;line-height:1.6;margin:12px 0 40px}.embed-note a{color:inherit;white-space:nowrap;margin-left:6px}.gal-h{font:11px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#55534d;font-weight:400;margin:56px 0 18px;padding-top:14px;border-top:1px solid #aaa69b80;scroll-margin-top:200px}.gal-h:first-child{margin-top:0}@media(max-width:600px){.embed{margin-left:-5vw;margin-right:-5vw;border-radius:0}}
 </style></head><body class="content-page"><a class="skip-link" href="#content">Skip to content</a><header><a class="wordmark" href="index.html">ABHINASH TUMMALA</a><nav aria-label="Main navigation"><a href="index.html">Work</a><a href="about.html">About</a></nav></header><main class="lidar-main" id="content"><h1>Washington in LiDAR.</h1>
 
 <div class="tabbar">
@@ -42,74 +42,61 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
 <button role="tab" id="t-gallery" aria-controls="gallery">Gallery</button>
 </div>
 </div>
+<div class="embed" id="viewer-stage" hidden></div>
 
-<section class="panel" id="seattle" role="tabpanel" aria-labelledby="t-seattle-city">
-<div class="embed" data-src="lidar-viewer/" data-title="Seattle city viewer"></div>
+<section class="panel" id="seattle" role="tabpanel" aria-labelledby="t-seattle-city" data-page="lidar-viewer/">
 <p class="embed-note">2.5 million points, water removed, the budget weighted toward towers. Hover a landmark and click to fly in. <a href="lidar-viewer/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="smith-tower" role="tabpanel" aria-labelledby="t-smith-tower" hidden>
-<div class="embed" data-src="landmarks/smith-tower/" data-title="Smith Tower in 3D"></div>
+<section class="panel" id="smith-tower" role="tabpanel" aria-labelledby="t-smith-tower" hidden data-page="landmarks/smith-tower/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/smith-tower/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="pioneer-square" role="tabpanel" aria-labelledby="t-pioneer-square" hidden>
-<div class="embed" data-src="landmarks/pioneer-square-block/" data-title="Pioneer Square in 3D"></div>
+<section class="panel" id="pioneer-square" role="tabpanel" aria-labelledby="t-pioneer-square" hidden data-page="landmarks/pioneer-square-block/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/pioneer-square-block/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="columbia-center" role="tabpanel" aria-labelledby="t-columbia-center" hidden>
-<div class="embed" data-src="landmarks/columbia-center/" data-title="Columbia Center in 3D"></div>
+<section class="panel" id="columbia-center" role="tabpanel" aria-labelledby="t-columbia-center" hidden data-page="landmarks/columbia-center/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/columbia-center/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="central-library" role="tabpanel" aria-labelledby="t-central-library" hidden>
-<div class="embed" data-src="landmarks/central-library/" data-title="Central Library in 3D"></div>
+<section class="panel" id="central-library" role="tabpanel" aria-labelledby="t-central-library" hidden data-page="landmarks/central-library/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/central-library/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="pike-place" role="tabpanel" aria-labelledby="t-pike-place" hidden>
-<div class="embed" data-src="landmarks/pike-place-market/" data-title="Pike Place Market in 3D"></div>
+<section class="panel" id="pike-place" role="tabpanel" aria-labelledby="t-pike-place" hidden data-page="landmarks/pike-place-market/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/pike-place-market/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="great-wheel" role="tabpanel" aria-labelledby="t-great-wheel" hidden>
-<div class="embed" data-src="landmarks/great-wheel/" data-title="Great Wheel in 3D"></div>
+<section class="panel" id="great-wheel" role="tabpanel" aria-labelledby="t-great-wheel" hidden data-page="landmarks/great-wheel/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/great-wheel/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="amazon-spheres" role="tabpanel" aria-labelledby="t-amazon-spheres" hidden>
-<div class="embed" data-src="landmarks/amazon-spheres/" data-title="Amazon Spheres in 3D"></div>
+<section class="panel" id="amazon-spheres" role="tabpanel" aria-labelledby="t-amazon-spheres" hidden data-page="landmarks/amazon-spheres/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/amazon-spheres/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="space-needle" role="tabpanel" aria-labelledby="t-space-needle" hidden>
-<div class="embed" data-src="landmarks/space-needle/" data-title="Space Needle in 3D"></div>
+<section class="panel" id="space-needle" role="tabpanel" aria-labelledby="t-space-needle" hidden data-page="landmarks/space-needle/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/space-needle/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="science-center" role="tabpanel" aria-labelledby="t-science-center" hidden>
-<div class="embed" data-src="landmarks/psc-arches/" data-title="Pacific Science Center in 3D"></div>
+<section class="panel" id="science-center" role="tabpanel" aria-labelledby="t-science-center" hidden data-page="landmarks/psc-arches/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/psc-arches/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="climate-pledge" role="tabpanel" aria-labelledby="t-climate-pledge" hidden>
-<div class="embed" data-src="landmarks/climate-pledge-arena/" data-title="Climate Pledge Arena in 3D"></div>
+<section class="panel" id="climate-pledge" role="tabpanel" aria-labelledby="t-climate-pledge" hidden data-page="landmarks/climate-pledge-arena/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/climate-pledge-arena/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="lumen-field" role="tabpanel" aria-labelledby="t-lumen-field" hidden>
-<div class="embed" data-src="landmarks/lumen-field/" data-title="Lumen Field in 3D"></div>
+<section class="panel" id="lumen-field" role="tabpanel" aria-labelledby="t-lumen-field" hidden data-page="landmarks/lumen-field/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="landmarks/lumen-field/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="green-lake-canopy" role="tabpanel" aria-labelledby="t-green-lake-canopy" hidden>
-<div class="embed" data-src="green-lake/" data-title="Green Lake canopy in 3D"></div>
+<section class="panel" id="green-lake-canopy" role="tabpanel" aria-labelledby="t-green-lake-canopy" hidden data-page="green-lake/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="green-lake/">Full screen ↗</a></p>
 </section>
 
-<section class="panel" id="arboretum" role="tabpanel" aria-labelledby="t-arboretum" hidden>
-<div class="embed" data-src="arboretum-grove/" data-title="Arboretum grove in 3D"></div>
+<section class="panel" id="arboretum" role="tabpanel" aria-labelledby="t-arboretum" hidden data-page="arboretum-grove/">
 <p class="embed-note">Every scanned point, with the city around it. Switch between sun, frost, height and true colour. <a href="arboretum-grove/">Full screen ↗</a></p>
 </section>
 
@@ -186,22 +173,58 @@ body{overflow:auto;min-height:100vh}.lidar-main{max-width:1400px;margin:auto;pad
     const r = t.parentElement;
     if (t.offsetLeft + t.offsetWidth > r.scrollLeft + r.clientWidth || t.offsetLeft < r.scrollLeft) r.scrollLeft = t.offsetLeft - 24;
   };
-  const fit = () => {  // the open viewer fills the window below the sticky tab bar
-    const e = document.querySelector('.panel:not([hidden]) .embed');
-    if (!e) return;
+  // the City and landmark tabs share one viewer frame. Switching between them moves the camera the way
+  // the city's hotspots do: from the city it flies in to the landmark; back to City it flies out again;
+  // landmark to landmark it flies out to the city and on in to the next. A deep link opens its viewer directly.
+  const stage = document.getElementById('viewer-stage');
+  const pageOf = id => { const p = document.getElementById(id); return p && p.dataset.page; };
+  const abs = u => new URL(u, location.href).pathname;
+  const cityPath = abs(pageOf('seattle'));
+  let frame = null, after = null, current = null;
+  const fit = () => {  // the viewer fills the window below the sticky tab bar
+    if (stage.hidden) return;
     const cs = getComputedStyle(bar), below = parseFloat(cs.top) + bar.offsetHeight + parseFloat(cs.marginBottom);
-    e.style.height = Math.max(420, innerHeight - below - 56) + 'px';
+    stage.style.height = Math.max(420, innerHeight - below - 56) + 'px';
+  };
+  const framePath = () => { try { return frame.contentWindow.location.pathname; } catch (e) { return ''; } };
+  const cityGo = url => {  // ask the city to fly to that viewer, once its code is up (it waits until settled)
+    const t0 = performance.now();
+    (function poll() {
+      let w = null; try { w = frame && frame.contentWindow; } catch (e) {}
+      if (w && w.__lidarGo && w.location.pathname === cityPath) w.__lidarGo(new URL(url, location.href).href);
+      else if (frame && performance.now() - t0 < 60000) setTimeout(poll, 120);
+    })();
+  };
+  const tabOfPath = path => ids.find(i => pageOf(i) && abs(pageOf(i)) === path);
+  const drive = id => {   // make the frame show this tab's viewer
+    const want = pageOf(id);
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.title = 'LiDAR 3D viewer'; frame.allow = 'fullscreen'; frame.src = want;
+      frame.addEventListener('load', () => {   // the frame moved on its own (a hotspot, its back arrow): follow it
+        const path = framePath();
+        if (after && path === cityPath) { const u = after; after = null; cityGo(u); return; }
+        if (after) return;
+        const t = tabOfPath(path);
+        if (t && t !== current) { history.replaceState(null, '', '#' + t); show(t); }
+      });
+      stage.append(frame); return;
+    }
+    const cur = framePath();
+    if (cur === abs(want)) { after = null; return; }
+    if (cur === cityPath) { cityGo(want); return; }
+    // on a landmark: back out to the city (flying, if it was flown into), then on to the next one
+    after = id === 'seattle' ? null : want;
+    let back = null; try { back = frame.contentDocument.querySelector('.vui-back'); } catch (e) {}
+    if (back) back.click(); else frame.src = pageOf('seattle');
   };
   const show = id => {
+    current = id;
     ids.forEach(p => document.getElementById(p).hidden = p !== id);
-    document.querySelectorAll('.embed').forEach(e => {
-      const on = e.closest('.panel').id === id, f = e.querySelector('iframe');
-      if (on && !f) {
-        const n = document.createElement('iframe');
-        n.src = e.dataset.src; n.title = e.dataset.title; n.allow = 'fullscreen';
-        e.append(n);
-      } else if (!on && f) f.remove();
-    });
+    const viewer = !!pageOf(id);
+    stage.hidden = !viewer;
+    if (viewer) drive(id);
+    else if (frame) { frame.remove(); frame = null; after = null; }   // one WebGL page at a time
     fit();
     const area = areaOf(id);
     top.forEach(t => { const on = t.getAttribute('aria-controls') === area; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; if (on) reveal(t); });

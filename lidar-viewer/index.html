@@ -287,6 +287,17 @@ async function go(s) {
   }
   location.href = s.url;
 }
+// the studies page drives this viewer from its tabs: __lidarGo(url) flies to that hotspot's viewer as soon
+// as the city has settled (loaded, or finished flying back out from the last one)
+let settled = false, queued = null;
+const pathOf = u => new URL(u, location.href).pathname;
+function goQueued() {
+  if (!settled || !queued || flying) return;
+  const s = spots.find(x => pathOf(x.url) === pathOf(queued)); queued = null;
+  if (s) go(s);
+}
+window.__lidarGo = url => { queued = url; goQueued(); };
+function settle() { settled = true; goQueued(); }
 function comeBack(restored) {   // returning from a hotspot's viewer: start on its view and fly back out
   const st = recall('lidarCity'), s = st && spots.find(x => x.id === st.id);
   store('lidarCity');
@@ -294,7 +305,7 @@ function comeBack(restored) {   // returning from a hotspot's viewer: start on i
   // the page restored as it was left, a fresh load from that viewer's back link, or a history step back
   if (!s || !(restored || nav === 'back_forward' || ref.includes(new URL(s.url, location.href).pathname))) {
     document.body.classList.remove('spot-flying'); mat.uniforms.uIso.value = 0; setLens(CITY_FOV); fade.style.opacity = 0;
-    window.vuiHandoffDone && window.vuiHandoffDone(); controls.enabled = true; return;
+    window.vuiHandoffDone && window.vuiHandoffDone(); controls.enabled = true; settle(); return;
   }
   const ho = window.__vuiHandoff; window.__vuiHandoff = null;
   controls.enabled = false; controls.autoRotate = false;   // hold still until the fly-out starts
@@ -308,10 +319,10 @@ function comeBack(restored) {   // returning from a hotspot's viewer: start on i
   requestAnimationFrame(() => window.vuiHandoffDone && window.vuiHandoffDone());   // dissolve from the viewer's last frame
   // let the dissolve get going before moving, so the two frames never drift apart while both show
   setTimeout(() => fly(v, {p: new THREE.Vector3(...st.cam), t: new THREE.Vector3(...st.target), fov: CITY_FOV}, 2600, 1, 0).then(() => {
-    document.body.classList.remove('spot-flying'); controls.enabled = true; controls.update(); setHover(null); placePins();
+    document.body.classList.remove('spot-flying'); controls.enabled = true; controls.update(); setHover(null); placePins(); settle();
   }), ho && ho.snap ? 550 : 0);
 }
-addEventListener('pageshow', e => { if (e.persisted) { window.vuiHandoff && window.vuiHandoff(); comeBack(true); } });   // the browser's back button
+addEventListener('pageshow', e => { if (e.persisted) { settled = false; window.vuiHandoff && window.vuiHandoff(); comeBack(true); } });   // the browser's back button
 { const t0 = performance.now();   // after the shared controls mount (they set the spin and the view)
   (function wait() { if (document.querySelector('.vui-bar') || performance.now() - t0 > 4000) comeBack(false); else requestAnimationFrame(wait); })(); }
 controls.addEventListener('change', placePins);
