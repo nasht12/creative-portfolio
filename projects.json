@@ -48,6 +48,7 @@
     "description": "An interactive view of Ethereum’s public mempool and block activity. Pending transactions form a globe of points before flowing into confirmed blocks, revealing transaction order and fees.",
     "image": "media/block-factory-aligned.png",
     "url": "web3/",
+    "direct": true,
     "category": "Web3 UI",
     "categoryDescription": "Blockchain interfaces & data visualization",
     "note": "Read-only Ethereum visualization · Live data with a recorded replay fallback."
@@ -63,6 +64,7 @@
     "description": "Photographs translated into estimated depth, then shaped into tonal bands and grayscale studies. Explore original-to-result comparisons from my Depth Exploration project.",
     "image": "media/photo-studies/depth-sculpture.webp",
     "url": "photo-studies.html#vathography",
+    "direct": true,
     "note": "Independent studies inspired by Karim Joseph Nassar’s Vathography. Photographs and interface by Abhinash Tummala; depth estimated with Depth Anything V2 Large."
   },
   {
@@ -76,6 +78,7 @@
     "description": "Exploring estimated surface color with lighting and shadow reduced. Compare original photographs with saved Marigold V2 albedo outputs from my Depth Exploration project.",
     "image": "media/photo-studies/albedo-autumn.webp",
     "url": "photo-studies.html#askiagraphy",
+    "direct": true,
     "note": "Independent studies inspired by Karim Joseph Nassar’s Askiagraphy. Photographs and interface by Abhinash Tummala; albedo estimated with Marigold V2."
   },
   {
